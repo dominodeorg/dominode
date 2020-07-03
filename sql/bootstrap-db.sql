@@ -1,5 +1,15 @@
 -- DDL commands to bootstrap the DomiNode DB
 
+--  TODO: Use a different schema for production instead of `public`
+--  TODO: Revoke insert and update permission on production schema for the editor role once the initial table load is done
+--  TODO: Add a function to copy a table back to the staging area so that it may be modified safely
+
+-- Create group roles
+-- Create staging schemas and assign access permissions
+-- Tweak public schema's permissions
+-- Create styles table
+-- Install helper functions
+
 -- -----
 -- ROLES
 -- -----
@@ -8,12 +18,13 @@ CREATE ROLE admin WITH CREATEDB CREATEROLE;
 CREATE ROLE replicator WITH REPLICATION;
 
 CREATE ROLE editor;
+CREATE ROLE dominode_user;
 
 CREATE ROLE ppd_editor IN ROLE editor;
-CREATE ROLE ppd_user;
+CREATE ROLE ppd_user IN ROLE dominode_user;
 
 CREATE ROLE lsd_editor IN ROLE editor;
-CREATE ROLE lsd_user;
+CREATE ROLE lsd_user IN ROLE dominode_user;
 
 -- ---------------
 -- STAGING SCHEMAS
@@ -51,6 +62,72 @@ CREATE TABLE IF NOT EXISTS public.layer_styles
 );
 
 ALTER TABLE public.layer_styles OWNER TO editor;
+GRANT SELECT ON public.layer_styles TO dominode_user;
+
+
+-- Create helper functions in order to facilitate loading datasets
+
+CREATE OR REPLACE FUNCTION assignStagingPermissions(qualifiedTableName varchar) RETURNS VOID AS $functionBody$
+--   1. assign ownership to the group role
+--
+--   ALTER TABLE ppd_staging."ppd_rrmap_v0.0.1-staging" OWNER TO ppd_editor;
+--
+--   2. Grant relevant permissions to users
+--
+--   GRANT SELECT ON ppd_staging."ppd_rrmap_v0.0.1-staging" TO ppd_user;
+    DECLARE
+        schemaName varchar;
+        schemaDepartment varchar;
+        editorRoleName varchar;
+        userRoleName varchar;
+    BEGIN
+        schemaName := split_part(qualifiedTableName, '.', 1);
+        schemaDepartment := replace(schemaName, '_staging', '');
+        editorRoleName := concat(schemaDepartment, '_editor');
+        userRoleName := concat(schemaDepartment, '_user');
+        EXECUTE format('ALTER TABLE %s OWNER TO %I', qualifiedTableName, editorRoleName);
+        EXECUTE format('GRANT SELECT ON %s TO %I', qualifiedTableName, userRoleName);
+    END
+
+    $functionBody$
+    LANGUAGE  plpgsql;
+
+
+CREATE OR REPLACE FUNCTION moveTableToPublicSchema(qualifiedTableName varchar, newName varchar) RETURNS VOID AS $functionBody$
+    -- Move a table from a department's internal schema to the public schema
+    --
+    -- Moved table is renamed and assigned proper permissions.
+    --
+    -- Example usage:
+    --
+    -- SELECT moveToPublicSchema('ppd_staging."ppd_schools_v0.0.1-staging"', 'ppd_schools_v0.0.1')
+    --
+    --
+
+    DECLARE
+        schemaName varchar;
+        oldName varchar;
+        newQualifiedName varchar;
+        publicQualifiedName varchar;
+    BEGIN
+        schemaName := split_part(qualifiedTableName, '.', 1);
+        oldName := replace(qualifiedTableName, concat(schemaName, '.'), '');
+        newQualifiedName := concat(schemaName, '.', format('"%s"', newName));
+        publicQualifiedName := concat('public.', format('"%s"', newName));
+        -- RAISE NOTICE 'schemaName: %', schemaName;
+        -- RAISE NOTICE 'oldName: %', oldName;
+        -- RAISE NOTICE 'newQualifiedName: %', newQualifiedName;
+        -- RAISE NOTICE 'publicQualifiedName: %', publicQualifiedName;
+        EXECUTE format('ALTER TABLE %s RENAME TO %I', qualifiedTableName::regclass, newName);
+        EXECUTE format('ALTER TABLE %s SET SCHEMA public', newQualifiedName);
+        EXECUTE format('GRANT SELECT ON %s TO public', publicQualifiedName);
+        -- EXECUTE format('REVOKE INSERT, UPDATE ON %s FROM editor', publicQualifiedName);
+
+    END
+    $functionBody$
+    LANGUAGE  plpgsql;
+
+
 
 
 -- Disable creation of objects on the public schema by default
@@ -72,9 +149,42 @@ GRANT CREATE ON SCHEMA public TO editor;
 -- CREATE USER lsd_editor2 PASSWORD 'lsd_editor2' IN ROLE lsd_editor;
 -- CREATE USER lsd_user1 PASSWORD 'lsd_user1' IN ROLE lsd_user;
 
+-- -----------------
+-- Add a new dataset
+-- -----------------
 
 -- 2. Whenever a new dataset is added by an editor,
 --   1. assign ownership to the group role
---   ALTER TABLE ppd_staging.schools OWNER TO ppd_editor;
+--
+--   ALTER TABLE ppd_staging."ppd_rrmap_v0.0.1-staging" OWNER TO ppd_editor;
+--
 --   2. Grant relevant permissions to users
---   GRANT SELECT ON ppd_staging.schools TO ppd_user;
+--
+--   GRANT SELECT ON ppd_staging."ppd_rrmap_v0.0.1-staging" TO ppd_user;
+
+
+-- ---------------------------------------------
+-- Move layer to public (i.e. production) schema
+-- ---------------------------------------------
+
+-- 3. In order to move the dataset to the public (i.e. production) schema,
+--   1. Tables in the public schema must be properly versioned, so first
+--      rename the table in order to either:
+--      -  remove any pre-release information from its name
+--      -  ensure a proper version is included in the table name
+--
+--      ALTER TABLE ppd_staging."ppd_rrmap_v0.0.1-staging" RENAME TO "ppd_rrmap_v0.0.1";
+--
+--   2. Move the renamed table to the public schema
+--
+--      ALTER TABLE ppd_staging."ppd_rrmap_v0.0.1" SET SCHEMA public;
+--
+--   3. Grant relevant permissions to users
+--
+--      GRANT SELECT ON public."ppd_rrmap_v0.0.1" TO public;
+
+--  moveToPublic(table, new_name)
+
+-- useful psql commands:
+--
+-- dt ppd_staging.*
