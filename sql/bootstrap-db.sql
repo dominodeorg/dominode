@@ -1,7 +1,5 @@
 -- DDL commands to bootstrap the DomiNode DB
 
---  TODO: Use a different schema for production instead of `public`
---  TODO: Revoke insert and update permission on production schema for the editor role once the initial table load is done
 --  TODO: Add a function to copy a table back to the staging area so that it may be modified safely
 
 -- Create group roles
@@ -17,25 +15,27 @@
 CREATE ROLE admin WITH CREATEDB CREATEROLE;
 CREATE ROLE replicator WITH REPLICATION;
 
-CREATE ROLE editor;
 CREATE ROLE dominode_user;
+CREATE ROLE editor IN ROLE dominode_user;
 
-CREATE ROLE ppd_editor IN ROLE editor;
 CREATE ROLE ppd_user IN ROLE dominode_user;
+CREATE ROLE ppd_editor IN ROLE ppd_user, editor;
 
-CREATE ROLE lsd_editor IN ROLE editor;
 CREATE ROLE lsd_user IN ROLE dominode_user;
+CREATE ROLE lsd_editor IN ROLE lsd_user, editor;
 
 -- ---------------
 -- STAGING SCHEMAS
 -- ---------------
 
+CREATE SCHEMA IF NOT EXISTS dominode_staging AUTHORIZATION editor;
 CREATE SCHEMA IF NOT EXISTS ppd_staging AUTHORIZATION ppd_editor;
 CREATE SCHEMA IF NOT EXISTS lsd_staging AUTHORIZATION lsd_editor;
 
 -- Grant schema access to the relevant roles
-GRANT USAGE ON SCHEMA ppd_staging TO ppd_user;
-GRANT USAGE ON SCHEMA lsd_staging TO lsd_user;
+GRANT USAGE, CREATE ON SCHEMA dominode_staging TO dominode_user;
+GRANT USAGE, CREATE ON SCHEMA ppd_staging TO ppd_user;
+GRANT USAGE, CREATE ON SCHEMA lsd_staging TO lsd_user;
 
 -- -------------
 -- PUBLIC SCHEMA
@@ -67,61 +67,83 @@ GRANT SELECT ON public.layer_styles TO dominode_user;
 
 -- Create helper functions in order to facilitate loading datasets
 
-CREATE OR REPLACE FUNCTION assignStagingPermissions(qualifiedTableName varchar) RETURNS VOID AS $functionBody$
+CREATE OR REPLACE FUNCTION setStagingPermissions(qualifiedTableName varchar) RETURNS VOID AS $functionBody$
 --   1. assign ownership to the group role
 --
---   ALTER TABLE ppd_staging."ppd_rrmap_v0.0.1-staging" OWNER TO ppd_editor;
+--      ALTER TABLE ppd_staging."ppd_rrmap_v0.0.1-staging" OWNER TO ppd_editor;
 --
 --   2. Grant relevant permissions to users
 --
---   GRANT SELECT ON ppd_staging."ppd_rrmap_v0.0.1-staging" TO ppd_user;
+--      GRANT SELECT ON ppd_staging."ppd_rrmap_v0.0.1-staging" TO ppd_user;
     DECLARE
         schemaName varchar;
         schemaDepartment varchar;
-        editorRoleName varchar;
         userRoleName varchar;
     BEGIN
         schemaName := split_part(qualifiedTableName, '.', 1);
         schemaDepartment := replace(schemaName, '_staging', '');
-        editorRoleName := concat(schemaDepartment, '_editor');
         userRoleName := concat(schemaDepartment, '_user');
-        EXECUTE format('ALTER TABLE %s OWNER TO %I', qualifiedTableName, editorRoleName);
-        EXECUTE format('GRANT SELECT ON %s TO %I', qualifiedTableName, userRoleName);
+        EXECUTE format('ALTER TABLE %s OWNER TO %I', qualifiedTableName, userRoleName);
     END
 
     $functionBody$
     LANGUAGE  plpgsql;
 
 
-CREATE OR REPLACE FUNCTION moveTableToPublicSchema(qualifiedTableName varchar, newName varchar) RETURNS VOID AS $functionBody$
+CREATE OR REPLACE FUNCTION moveTableToDominodeStagingSchema(qualifiedTableName varchar) RETURNS VOID AS $functionBody$
+    -- Move a table from a department's internal schema to the project-wide internal staging schema
+    --
+    -- Tables in the department's staging schema are only readable by deparment members, while those
+    -- on the project-wide staging schema are readable by all users (but they are only editable by
+    -- department members).
+    --
+
+DECLARE
+    schemaName varchar;
+    unqualifiedName varchar;
+    newQualifiedName varchar;
+BEGIN
+    schemaName := split_part(qualifiedTableName, '.', 1);
+    unqualifiedName := replace(qualifiedTableName, concat(schemaName, '.'), '');
+    newQualifiedName := concat('dominode_staging.', format('%s', unqualifiedName));
+    EXECUTE format('ALTER TABLE %s SET SCHEMA dominode_staging', qualifiedTableName);
+    EXECUTE format('GRANT SELECT ON %s TO dominode_user', newQualifiedName);
+
+END
+$functionBody$
+    LANGUAGE  plpgsql;
+
+
+CREATE OR REPLACE FUNCTION moveTableToPublicSchema(qualifiedTableName varchar) RETURNS VOID AS $functionBody$
     -- Move a table from a department's internal schema to the public schema
     --
     -- Moved table is renamed and assigned proper permissions.
     --
     -- Example usage:
     --
-    -- SELECT moveToPublicSchema('ppd_staging."ppd_schools_v0.0.1-staging"', 'ppd_schools_v0.0.1')
+    -- SELECT moveToPublicSchema('ppd_staging."ppd_schools_v0.0.1"')
     --
     --
 
     DECLARE
         schemaName varchar;
-        oldName varchar;
-        newQualifiedName varchar;
+        unqualifiedName varchar;
         publicQualifiedName varchar;
+        ownerRole varchar;
     BEGIN
         schemaName := split_part(qualifiedTableName, '.', 1);
-        oldName := replace(qualifiedTableName, concat(schemaName, '.'), '');
-        newQualifiedName := concat(schemaName, '.', format('"%s"', newName));
-        publicQualifiedName := concat('public.', format('"%s"', newName));
-        -- RAISE NOTICE 'schemaName: %', schemaName;
-        -- RAISE NOTICE 'oldName: %', oldName;
+        unqualifiedName := replace(qualifiedTableName, concat(schemaName, '.'), '');
+        unqualifiedName := replace(unqualifiedName, '"', '');
+        publicQualifiedName := concat('public.', format('%I', unqualifiedName));
+        EXECUTE format('SELECT tableowner FROM pg_tables where schemaname=%L AND tablename=%L', schemaName, unqualifiedName) INTO ownerRole;
+        RAISE NOTICE 'schemaName: %', schemaName;
+        RAISE NOTICE 'unqualifiedName: %', unqualifiedName;
         -- RAISE NOTICE 'newQualifiedName: %', newQualifiedName;
         -- RAISE NOTICE 'publicQualifiedName: %', publicQualifiedName;
-        EXECUTE format('ALTER TABLE %s RENAME TO %I', qualifiedTableName::regclass, newName);
-        EXECUTE format('ALTER TABLE %s SET SCHEMA public', newQualifiedName);
+        RAISE NOTICE 'ownerRole: %', ownerRole;
+        EXECUTE format('ALTER TABLE %s SET SCHEMA public', qualifiedTableName);
         EXECUTE format('GRANT SELECT ON %s TO public', publicQualifiedName);
-        -- EXECUTE format('REVOKE INSERT, UPDATE ON %s FROM editor', publicQualifiedName);
+        EXECUTE format('REVOKE INSERT, UPDATE, DELETE ON %s FROM %I', publicQualifiedName, ownerRole);
 
     END
     $functionBody$
