@@ -76,12 +76,15 @@ CREATE OR REPLACE FUNCTION setStagingPermissions(qualifiedTableName varchar) RET
 --
 --      GRANT SELECT ON ppd_staging."ppd_rrmap_v0.0.1-staging" TO ppd_user;
     DECLARE
+        unqualifiedName varchar;
         schemaName varchar;
         schemaDepartment varchar;
         userRoleName varchar;
     BEGIN
         schemaName := split_part(qualifiedTableName, '.', 1);
-        schemaDepartment := replace(schemaName, '_staging', '');
+        unqualifiedName := replace(qualifiedTableName, concat(schemaName, '.'), '');
+        unqualifiedName := replace(unqualifiedName, '"', '');
+        schemaDepartment := split_part(unqualifiedName, '_', 1);
         userRoleName := concat(schemaDepartment, '_user');
         EXECUTE format('ALTER TABLE %s OWNER TO %I', qualifiedTableName, userRoleName);
     END
@@ -106,6 +109,8 @@ BEGIN
     schemaName := split_part(qualifiedTableName, '.', 1);
     unqualifiedName := replace(qualifiedTableName, concat(schemaName, '.'), '');
     newQualifiedName := concat('dominode_staging.', format('%s', unqualifiedName));
+    PERFORM setStagingPermissions(qualifiedTableName);
+    -- EXECUTE format('SELECT setStagingPermissions(%s)', qualifiedTableName);
     EXECUTE format('ALTER TABLE %s SET SCHEMA dominode_staging', qualifiedTableName);
     EXECUTE format('GRANT SELECT ON %s TO dominode_user', newQualifiedName);
 
