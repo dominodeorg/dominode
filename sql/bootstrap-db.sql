@@ -87,6 +87,9 @@ CREATE OR REPLACE FUNCTION setStagingPermissions(qualifiedTableName varchar) RET
         schemaDepartment := split_part(unqualifiedName, '_', 1);
         userRoleName := concat(schemaDepartment, '_user');
         EXECUTE format('ALTER TABLE %s OWNER TO %I', qualifiedTableName, userRoleName);
+        IF schemaName = 'dominode_staging' THEN
+            EXECUTE format('GRANT SELECT ON %s TO dominode_user', qualifiedTableName);
+        END IF;
     END
 
     $functionBody$
@@ -152,6 +155,29 @@ CREATE OR REPLACE FUNCTION moveTableToPublicSchema(qualifiedTableName varchar) R
 
     END
     $functionBody$
+    LANGUAGE  plpgsql;
+
+
+CREATE OR REPLACE FUNCTION copyTableBackToStagingSchema(qualifiedTableName varchar, newTableQualifiedName varchar) RETURNS VOID AS $functionBody$
+    -- Make a copy of the input table into the department's staging schema
+    --
+    -- This function shall be used whenever a table needs to be edited
+
+    -- - Copy the table to staging schema under the input new name
+    -- - Assign correct access permissions
+
+DECLARE
+    ownerRole varchar;
+    tableName varchar;
+BEGIN
+    tableName := replace(replace(qualifiedTableName, 'public.', ''), '"', '');
+    ownerRole := concat(split_part(tableName, '_', 1), '_user');
+    EXECUTE format('CREATE TABLE %s (LIKE %s INCLUDING ALL)', newTableQualifiedName, qualifiedTableName);
+    EXECUTE format('INSERT INTO %s SELECT * FROM %s', newTableQualifiedName, qualifiedTableName);
+    EXECUTE format('ALTER TABLE %s OWNER TO %I', newTableQualifiedName, ownerRole);
+    -- EXECUTE format('GRANT ALL ON %s TO %I', newTableQualifiedName, ownerRole);
+END
+$functionBody$
     LANGUAGE  plpgsql;
 
 
