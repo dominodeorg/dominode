@@ -1,12 +1,75 @@
 -- DDL commands to bootstrap the DomiNode DB
 
---  TODO: Add a function to copy a table back to the staging area so that it may be modified safely
-
 -- Create group roles
 -- Create staging schemas and assign access permissions
 -- Tweak public schema's permissions
 -- Create styles table
 -- Install helper functions
+
+-- Intended workflows
+--
+-- 1. Ingest data into the DB
+--
+-- 1.1. User copies data (by loading tables with QGIS database manager or using
+--      other means) over to its department's staging schema
+--
+--      It is crucial that the dataset is named according to the DomiNode
+--      naming conventions. Either set the table's name straight on import or
+--      be sure to rename it as the first thing after import
+--
+--      naming example: ppd_schools_v0.1.0
+--
+-- 1.2. Once the table is in the department's schema and has the proper name,
+--      call the `setStagingPermissions()` function with the table's fully
+--      qualified name (i.e. including the schema) in order to set appropriate
+--      access permissions to the other department members
+--
+--      example: SELECT setStagingPermissions('ppd_staging."ppd_schools_v0.1.0"';
+--
+--      After calling this function, all department users shall be able to
+--      access and edit the table
+
+-- 1.3. If this table should be visible to other department's users it may be
+--      moved to the common staging schema, named `dominode_staging`. Call
+--      the `moveToDominodeStagingSchema()` function with the table's fully
+--      qualified name as argument
+--
+--      example: SELECT moveToDominodeStagingSchema('ppd_staging."ppd_schools_v0.1.0"');
+--
+--      After calling this function, the table will now be on the
+--      `dominode_staging` schema. All users of the department that owns the
+--      table still maintain the same access permissions and users from other
+--      departments are able to use the table as read-only
+--
+-- 1.4. If the table needs to be renamed (for example, to change the version)
+--      you may issue the usual SQL command and everything continues to work
+--
+--      examples: ALTER TABLE ppd_staging."ppd_schools_v0.1.0" RENAME TO "ppd_schools_v0.2.0";
+--
+-- 1.5. After all data edits are done, a user with the editor role may move the
+--      table to the public schema, where it becomes read-only (i.e. no user is
+--      able to modify it, with the exception of deleting it, which only the
+--      department's editors can do). In order to do so, call the
+--      moveTableToPublicSchema() function with the table's fully qualified name
+--
+--      example: SELECT moveTableToPublicSchema('ppd_staging."ppd_schools_v0.1.0"');
+--
+--
+-- 2. Modify already published data
+--
+-- 2.1. Tables that go into the public schema become readonly. The intended
+--      workflow for public data modifications is to copy the table to the
+--      department's staging schema, modify the data and then publish a new
+--      version of the table. Afterwards, the original version may be
+--      appropriately managed (archived, deleted, etc). In order to copy the
+--      table to the department's staging schema call the
+--      `copyTableBackToStagingSchema()` function. You need to pass it as
+--      arguments:
+--
+--      -  Fully qualified name of the table,
+--      -  New fully qualified name
+--
+--      example: SELECT copyTableBackToStagingSchema('public."ppd_schools_v0.1.0"', 'ppd_staging."ppd_schools-.v0.2.0-dev"');
 
 -- -----
 -- ROLES
@@ -113,7 +176,6 @@ BEGIN
     unqualifiedName := replace(qualifiedTableName, concat(schemaName, '.'), '');
     newQualifiedName := concat('dominode_staging.', format('%s', unqualifiedName));
     PERFORM setStagingPermissions(qualifiedTableName);
-    -- EXECUTE format('SELECT setStagingPermissions(%s)', qualifiedTableName);
     EXECUTE format('ALTER TABLE %s SET SCHEMA dominode_staging', qualifiedTableName);
     EXECUTE format('GRANT SELECT ON %s TO dominode_user', newQualifiedName);
 
@@ -144,11 +206,6 @@ CREATE OR REPLACE FUNCTION moveTableToPublicSchema(qualifiedTableName varchar) R
         unqualifiedName := replace(unqualifiedName, '"', '');
         publicQualifiedName := concat('public.', format('%I', unqualifiedName));
         EXECUTE format('SELECT tableowner FROM pg_tables where schemaname=%L AND tablename=%L', schemaName, unqualifiedName) INTO ownerRole;
-        RAISE NOTICE 'schemaName: %', schemaName;
-        RAISE NOTICE 'unqualifiedName: %', unqualifiedName;
-        -- RAISE NOTICE 'newQualifiedName: %', newQualifiedName;
-        -- RAISE NOTICE 'publicQualifiedName: %', publicQualifiedName;
-        RAISE NOTICE 'ownerRole: %', ownerRole;
         EXECUTE format('ALTER TABLE %s SET SCHEMA public', qualifiedTableName);
         EXECUTE format('GRANT SELECT ON %s TO public', publicQualifiedName);
         EXECUTE format('REVOKE INSERT, UPDATE, DELETE ON %s FROM %I', publicQualifiedName, ownerRole);
@@ -162,25 +219,27 @@ CREATE OR REPLACE FUNCTION copyTableBackToStagingSchema(qualifiedTableName varch
     -- Make a copy of the input table into the department's staging schema
     --
     -- This function shall be used whenever a table needs to be edited
-
-    -- - Copy the table to staging schema under the input new name
-    -- - Assign correct access permissions
+    --
+    -- Any department user should be able to copy a table back to its own
+    -- staging schema, regardless if the department owns the dataset or not.
 
 DECLARE
     ownerRole varchar;
-    tableName varchar;
 BEGIN
-    tableName := replace(replace(qualifiedTableName, 'public.', ''), '"', '');
-    ownerRole := concat(split_part(tableName, '_', 1), '_user');
+    ownerRole := concat(
+        split_part(
+            split_part(newTableQualifiedName, '.', 1),
+            '_',
+            1
+        ),
+        '_user'
+    );
     EXECUTE format('CREATE TABLE %s (LIKE %s INCLUDING ALL)', newTableQualifiedName, qualifiedTableName);
     EXECUTE format('INSERT INTO %s SELECT * FROM %s', newTableQualifiedName, qualifiedTableName);
     EXECUTE format('ALTER TABLE %s OWNER TO %I', newTableQualifiedName, ownerRole);
-    -- EXECUTE format('GRANT ALL ON %s TO %I', newTableQualifiedName, ownerRole);
 END
 $functionBody$
     LANGUAGE  plpgsql;
-
-
 
 
 -- Disable creation of objects on the public schema by default
@@ -201,43 +260,3 @@ GRANT CREATE ON SCHEMA public TO editor;
 -- CREATE USER lsd_editor1 PASSWORD 'lsd_editor1' IN ROLE lsd_editor;
 -- CREATE USER lsd_editor2 PASSWORD 'lsd_editor2' IN ROLE lsd_editor;
 -- CREATE USER lsd_user1 PASSWORD 'lsd_user1' IN ROLE lsd_user;
-
--- -----------------
--- Add a new dataset
--- -----------------
-
--- 2. Whenever a new dataset is added by an editor,
---   1. assign ownership to the group role
---
---   ALTER TABLE ppd_staging."ppd_rrmap_v0.0.1-staging" OWNER TO ppd_editor;
---
---   2. Grant relevant permissions to users
---
---   GRANT SELECT ON ppd_staging."ppd_rrmap_v0.0.1-staging" TO ppd_user;
-
-
--- ---------------------------------------------
--- Move layer to public (i.e. production) schema
--- ---------------------------------------------
-
--- 3. In order to move the dataset to the public (i.e. production) schema,
---   1. Tables in the public schema must be properly versioned, so first
---      rename the table in order to either:
---      -  remove any pre-release information from its name
---      -  ensure a proper version is included in the table name
---
---      ALTER TABLE ppd_staging."ppd_rrmap_v0.0.1-staging" RENAME TO "ppd_rrmap_v0.0.1";
---
---   2. Move the renamed table to the public schema
---
---      ALTER TABLE ppd_staging."ppd_rrmap_v0.0.1" SET SCHEMA public;
---
---   3. Grant relevant permissions to users
---
---      GRANT SELECT ON public."ppd_rrmap_v0.0.1" TO public;
-
---  moveToPublic(table, new_name)
-
--- useful psql commands:
---
--- dt ppd_staging.*

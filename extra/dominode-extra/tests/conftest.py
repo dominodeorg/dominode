@@ -31,7 +31,7 @@ def db_users_credentials():
 def db_admin_credentials():
     return {
         'host': 'localhost',
-        'db': 'dominode_test',
+        'db': 'dominode_pytest',
         'port': '55432',
         'user': 'dominode_test',
         'password': 'dominode_test',

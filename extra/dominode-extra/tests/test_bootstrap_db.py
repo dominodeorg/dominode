@@ -3,9 +3,6 @@ from sqlalchemy import exc
 
 import pytest
 
-# TODO: test regular user is not able to delete features from public table
-
-
 
 @pytest.mark.parametrize('username, schemaname', [
     pytest.param('ppd_user1', 'ppd_staging', id='t1'),
@@ -1543,11 +1540,15 @@ def test_regular_user_cannot_delete_features_from_table_in_public_schema(
                 connection.execute(f'DROP table {public_table_name}')
 
 
-# FIXME: WIP below
-@pytest.mark.parametrize('creator_username, modifier_username, schemaname', [
-    pytest.param('ppd_editor1', 'ppd_user2', 'ppd_staging', marks=pytest.mark.raises(exception=exc.ProgrammingError), id='t79.1'),
-    pytest.param('ppd_editor1', 'ppd_user2', 'dominode_staging', marks=pytest.mark.raises(exception=exc.ProgrammingError), id='t79.2'),
-    pytest.param('ppd_editor1', 'lsd_user2', 'dominode_staging', marks=pytest.mark.raises(exception=exc.ProgrammingError), id='t79.3'),
+@pytest.mark.parametrize('creator_username, modifier_username, initial_schemaname, final_schemaname', [
+    pytest.param('ppd_editor1', 'ppd_user2', 'ppd_staging', 'ppd_staging', id='t79.1'),
+    pytest.param('ppd_editor1', 'ppd_editor2', 'ppd_staging', 'ppd_staging', id='t80.1'),
+    pytest.param('ppd_editor1', 'ppd_user2', 'dominode_staging', 'ppd_staging', id='t79.2'),
+    pytest.param('ppd_editor1', 'ppd_editor2', 'dominode_staging', 'ppd_staging', id='t80.2'),
+    pytest.param('ppd_editor1', 'lsd_user2', 'ppd_staging', 'lsd_staging', id='t81.1'),
+    pytest.param('ppd_editor1', 'lsd_user2', 'dominode_staging', 'lsd_staging', id='t81.1'),
+    pytest.param('ppd_editor1', 'lsd_editor2', 'ppd_staging', 'lsd_staging', id='t82.1'),
+    pytest.param('ppd_editor1', 'lsd_editor2', 'dominode_staging', 'lsd_staging', id='t82.2'),
 ])
 def test_regular_user_can_call_copyTableBackToStagingSchema(
         db_users,
@@ -1555,25 +1556,17 @@ def test_regular_user_can_call_copyTableBackToStagingSchema(
         db_users_credentials,
         creator_username,
         modifier_username,
-        schemaname
+        initial_schemaname,
+        final_schemaname,
 ):
     creator_engine = _connect_to_db(creator_username, db_admin_credentials, db_users_credentials)
     creator_department = creator_username.partition('_')[0]
-    table_name = f'{schemaname}."{creator_department}_roads_v0.0.1"'
+    table_name = f'{initial_schemaname}."{creator_department}_roads_v0.0.1"'
     with creator_engine.connect() as connection:
         with connection.begin() as transaction:
             create_result = connection.execute(
                 f'CREATE TABLE {table_name} '
                 f'(id serial, road_name text, geom geometry(LINESTRING, 4326))'
-            )
-            insert_query = sla.text(
-                f'INSERT INTO {table_name} (road_name, geom) VALUES (:name, ST_GeomFromText(:geom, 4326))'
-            )
-            original_name = 'dummy'
-            insert_result = connection.execute(
-                insert_query,
-                name=original_name,
-                geom='LINESTRING(-71.160 42.258, -71.160 42.259, -71.161 42.25)'
             )
             connection.execute(
                 sla.text(f'SELECT setStagingPermissions(\'{table_name}\')')
@@ -1581,19 +1574,20 @@ def test_regular_user_can_call_copyTableBackToStagingSchema(
             connection.execute(
                 sla.text(f'SELECT moveTableToPublicSchema(\'{table_name}\')')
             )
-    public_table_name = table_name.replace(schemaname, 'public')
+    public_table_name = table_name.replace(initial_schemaname, 'public')
     copied_table_name = public_table_name.replace(
-        'public', schemaname).replace('v0.0.1', 'v0.0.2')
+        'public', final_schemaname).replace('v0.0.1', 'v0.0.2')
     modifier_engine = _connect_to_db(modifier_username, db_admin_credentials, db_users_credentials)
     with modifier_engine.connect() as connection:
-        try:
-            query = sla.text(
-                f'SELECT copyTableBackToStagingSchema(\'{public_table_name}\', \'{copied_table_name}\')'
+        connection.execute(
+            sla.text(
+                f'SELECT copyTableBackToStagingSchema('
+                f'\'{public_table_name}\', \'{copied_table_name}\')'
             )
-            result = connection.execute(query)
-        finally:  # clean up the DB
-            with creator_engine.connect() as connection:
-                connection.execute(f'DROP table {public_table_name}')
+        )
+        connection.execute(f'DROP table {copied_table_name}')  # clean up
+    with creator_engine.connect() as connection:
+        connection.execute(f'DROP table {public_table_name}')  # clean up
 
 
 def _connect_to_db(name, db_credentials, users_credentials):
