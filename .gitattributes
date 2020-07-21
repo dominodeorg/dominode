@@ -1,2 +1,2 @@
-qgs/**/*.qgs lockable
-qgs/**/*.qgz lockable
+qgis-projects/**/*.qgs lockable
+qgis-projects/**/*.qgz lockable
