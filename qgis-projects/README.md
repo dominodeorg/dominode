@@ -91,23 +91,7 @@ Adding data should be done directly by primary project custodians wherever possi
 
 ## File locks
 
-File locking is performed by using the Git LFS client, installed from [git-lfs.github.com](https://git-lfs.github.com). As the name suggests, this is a client side application and should not require any server side configuration when utilised with repositories hosted on GitHub.
-
-By default, once created, files should be locked by the relevant project custodian. Locking a file should prevent any merges which contain changes to the locked file.
-
-In order to lock a specified file, custodians may utilise the following git command.
-
-```text
-git lfs lock qgis-projects/project-name.qgs
-```
-
-Conversely, to unlock a file, similar syntax is used.
-
-```text
-git lfs lock qgis-projects/project-name.qgs
-```
-
-> Files which are intended to be locked should be specified using a relevant pattern in the project .gitattributes file. By default, a pattern for matching all child items for the qgis-projects directory of tpe qgs/ qgz should be included, as outlined in the directory structure section below.
+To prevent unwanted/ implicit changes to map projects, custodians may modify the file permissions for map projects to "read-only" prior to performing a commit.
 
 ## Directory structure
 
