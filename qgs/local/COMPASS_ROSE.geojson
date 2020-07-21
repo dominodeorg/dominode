@@ -1,8 +1,0 @@
-{
-"type": "FeatureCollection",
-"name": "COMPASS_ROSE",
-"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::2002" } },
-"features": [
-{ "type": "Feature", "properties": { "Lon WGS84": -61.3, "Lat WGS84": 15.35, "Epoch": "2020-07-20", "h Unit": "", "h WGS84": 0.0, "Declinatio": -15.043458441914568, "Annual": -0.045345877848813387, "value": "VAR 15°2′W\n(2020)\n\n\n\nh WGS84 0.0 \nANNUAL DECREASE 2′" }, "geometry": { "type": "Point", "coordinates": [ 474163.983828981115948, 1696431.070373203605413 ] } }
-]
-}
