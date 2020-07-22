@@ -6,13 +6,13 @@
 
 ## Project data
 
-Adding data should be done directly by primary project custodians wherever possible. Adding of features or layers to existing data sources (remote/ gpkg etc) should by distributed in the same manner as the original data source (republished) or have their source details modified in the following section.
+Adding data should be done directly by primary project custodians wherever possible. Adding of features or layers to existing data sources (remote/ gpkg etc) should be distributed in the same manner as the original data source (republished) or have their source details modified in the following section.
 
 ---
 
 - File: ./data/data.gpkg
 - Custodian: Default
-- Description: Local copy of all data directly copied from remote staging database. It is recommended that this is copied directly from the Dominode staging environment database.
+- Description: Local copy of utilised data copied from remote staging database as well as additional features sourced from public internet sources.
 - Source: [Download from google drive](https://drive.google.com/file/d/1B3o7bPx1iQH5qMXUGWQO-BwLkeJYlYP7/view?usp=sharing).
 
 > Note that the *data* directory is intended to be a symbolic link to a local data directory separate from the project repository.
