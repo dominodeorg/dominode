@@ -1,97 +1,21 @@
-# README
+# QGIS Projects
 
-This is the readme for a qgis-project data directory.
+- dominode-topomaps.qgs
+  - Custodian: charles@kartoza.com
+  - Description: Primary map project for toposheet production
 
-It has special considerations for the management and workflows of project data due to the requirements for the manual management of conflicts within QGIS project files, as outlined by the relevant [QGIS Project Collaboration SOP Document](https://docs.google.com/document/d/1JkBSQfYDSvlybmNpwsK2DS0egbIRjkiApVBE2B1cGIA/edit?usp=sharing).
-
-## Custodians
-
-The following section outlines data and project custodians for this repository. A custodian is the designated person(s) who should be considered the authoritative source for all modifications to a project or set of source data. All changes should be channeled through and published by the custodian.
-
----
-
-- Custodian: Default
-- Role: Primary Custodian
-- Description: Responsible for management of project wide geodata and GIS projects
-- Name: Charles Dixon-Paver
-- Mail: charles@kartoza.com
-- GitHub: @zacharlie
-
----
-
-- Custodian: Lead
-- Role: Project Leader
-- Description: Responsible for decision, especially for making changes to project data structures
-- Name: Ricardo Garcia Silva
-- Mail: ricardo@kartoza.com
-- GitHub: @ricardogsilva
-
----
-
-## Map Projects
-
-When creating a new map project, please ensure that this section is maintained with the relevant details.
-
-The naming convention for maps and associated files is to use hyphen-separated, or *kebab-case*, styling.
-
-> Map projects should be saved and stored as *qgs* documents (xml) **wherever possible** and not *qgz* documents (zipped archives, which are binary).
-
-The following elements outline the available projects within this repository.
-
----
-
-* Project: dominode-topomaps.qgs
-* Custodian: Default
-* Description: Primary map project for toposheet production
-
----
-
-## Geodata descriptions
-
-The following sections detail the relevant sources and file structures for geodata that are utilised within the projects in this directory.
-
-### Quickstart
-
-Download the relevant project data sources, usually indicated by a *./data* source in the following table. Remote sources should be available within map projects directly (assuming the relevant connections have been configured correctly within QGIS). Local data sources are stored within the repository.
-
-Once the data has been downloaded to the local system, create a symbolic link at ```qgis-projects/data``` which may redirect to the relevant filepath. Symbolic links can be relative or absolute.
-
-Linux and Mac users can create a symbolic link using the ```ln``` command, e.g. ```ln -s /home/user/data/project ./data```
-
-Windows users may use the ```mklink``` function from *cmd*, e.g. ```mklink /D ../../../data ./data```.
-
-### Project data
+## Project data
 
 Adding data should be done directly by primary project custodians wherever possible. Adding of features or layers to existing data sources (remote/ gpkg etc) should by distributed in the same manner as the original data source (republished) or have their source details modified in the following section.
 
 ---
 
-- File: ./data/dominode_data.gpkg
+- File: ./data/data.gpkg
 - Custodian: Default
 - Description: Local copy of all data directly copied from remote staging database. It is recommended that this is copied directly from the Dominode staging environment database.
-- Source: Connect to the database, create a local geopackage named dominode_data.gpkg and select all features, then drag and drop them onto the gpkg within the QGIS Browser. Contact the custodian for database connection details.
- 
----
-
-- File: ./data/auxillary_data.gpkg
-- Custodian: Default
-- Description: Additional data required but not present in core database. This data should be accounted for in the remote data source later on.
-- Source: [Download from google drive](https://drive.google.com/file/d/1lH3dr4Ic3EZmHfmmZXPCjM-vbp6V6epN/view?usp=sharing)
-
----
-
-- File: ./local/COMPASS_ROSE.geojson
-- Custodian: Default
-- Description: Feature generated with the Magnetic Declination QGIS plugin
-- Source: Contact custodian
-
----
+- Source: [Download from google drive](https://drive.google.com/file/d/1B3o7bPx1iQH5qMXUGWQO-BwLkeJYlYP7/view?usp=sharing).
 
 > Note that the *data* directory is intended to be a symbolic link to a local data directory separate from the project repository.
-
-## File locks
-
-To prevent unwanted/ implicit changes to map projects, custodians may modify the file permissions for map projects to "read-only" prior to performing a commit.
 
 ## Directory structure
 
@@ -107,35 +31,16 @@ Additional ownership can be added to the ```CODEOWNERS``` file where relevant.
 qgis-projects/file-name.qgs    @user03
 ```
 
-The following lines should be added to ```.gitignore``` in the *Project Root*.
-
-```text
-qgis-projects/data
-qgis-projects/**/*.qgs~
-qgis-projects/**/*.qgz~
-```
-
-This prevents git from interfering with the symbolic link to the data directory, which is likely to differ between users and operating systems. It also prevents the inclusion of QGIS autogenerated "backup" files, which are largely unnecessary when utilising a distributed VCS such as git.
-
-The following lines should be added to ```.gitattributes``` in the *Project Root*.
-
-```text
-qgis-projects/**/*.qgs lockable
-qgis-projects/**/*.qgz lockable
-```
-
-This ensures that QGIS project files are made available for *locking* by the Git LFS system.
-
 There are a number of directories utilised within a qis-projects directory (note that not all directories may be present until the relevant data is available). Common directories, their naming conventions and their functions are outlined by the following list.
 
 - README.md: This readme document in markdown format.
 - assets: Multimedia assets directory. This may include images used in this readme document, corporate stationary objects or assets for use in the cartographic process, such as svg libraries.
-- atlas: Default output directory for atlas items. Storing this directory within the project repository should be used with caution, as atlas outputs are often large binary data.
+- atlas: Default output directory for atlas items. Storing this directory within the project repository should be used with caution, as atlas outputs are often large binary data. Should be added to .gitignore by default.
 - data: Symbolic link to large file storage
-- docs: Additional documents and addenda
-- local: Directory or local data sources
-- qml: Directory for QGIS QML style files
 - qpt: Directory for qpt print layout template documents
-- scripts: Processing tools and script utility directory
 - sld: Directory SLD format style files, often saved for interoperability purposes
+- qml: Directory for QGIS QML style files
+- scripts: Processing tools and script utility directory
 - *.qgs: QGIS project files
+
+> Additional documents and addenda should be stored with the parent project (project root, i.e. ```../docs```)
