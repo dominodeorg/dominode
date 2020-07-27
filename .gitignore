@@ -3,5 +3,5 @@
 qgis-projects/data
 qgis-projects/**/*.qgs~
 qgis-projects/**/*.qgz~
-qgis-projects/atlas/*
-!qgis-projects/atlas/sample
+qgis-projects/atlas
+
