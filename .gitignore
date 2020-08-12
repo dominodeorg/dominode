@@ -4,4 +4,5 @@ qgis-projects/data
 qgis-projects/**/*.qgs~
 qgis-projects/**/*.qgz~
 qgis-projects/atlas
+scripts/.env
 
