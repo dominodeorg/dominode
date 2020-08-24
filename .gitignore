@@ -5,4 +5,5 @@ qgis-projects/**/*.qgs~
 qgis-projects/**/*.qgz~
 qgis-projects/atlas
 scripts/.env
-
+.python-version
+**/__pycache__

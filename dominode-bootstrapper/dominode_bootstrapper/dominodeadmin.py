@@ -53,4 +53,5 @@ def bootstrap(
         minio_port,
         minio_protocol
     )
+    geonodeadmin.bootstrap()
     typer.echo('Done!')
