@@ -197,15 +197,15 @@ class GeoServerManager:
         response = self.client.post(
             f'{self.base_url}/rest/workspaces',
             auth=(self.username, self.password),
-            headers=self.headers,
             json={
                     "workspace": {
                         "name": name
                     }
                 }
         )
-        response.raise_for_status
-        return response.json()
+        if response.status_code != 201:
+            return False
+        return True
 
     def get_workspace(self, name):
 
@@ -405,6 +405,7 @@ def _bootstrap_department_in_geoserver(
 
     workspace = manager.get_workspace(workspace_name)
 
+    typer.echo(f'Workspace {workspace}')
     if workspace is None:
         manager.create_workspace(workspace_name)
     else:
