@@ -152,35 +152,23 @@ class GeoNodeManager:
 class GeoServerManager:
     client: httpx.Client
     base_url: str
-    access_token: str
     headers: dict
 
     def __init__(
             self,
             client: httpx.Client,
-            base_url: str,
+            base_url: str = DEFAULT_GEOSERVER_BASE_URL,
             username: str = DEFAULT_GEOSERVER_ADMIN_USERNAME,
-            password: str = DEFAULT_GEOSERVER_ADMIN_PASSWORD,
-            access_token: typing.Optional[str] = None
+            password: str = DEFAULT_GEOSERVER_ADMIN_PASSWORD
     ):
         self.client = client
         self.base_url = base_url
         self.username = username
         self.password = password
-        self.access_token = access_token
         self.headers = {
             'Accept': 'application/json',
             'Content-Type': 'application/json'
         }
-
-    @classmethod
-    def from_geonode_manager(cls, geonode_manager: GeoNodeManager):
-        access_token = geonode_manager.get_geoserver_access_token()
-        return cls(
-            geonode_manager.client,
-            f'{geonode_manager.base_url}/geoserver',
-            access_token
-        )
 
     def list_workspaces(self):
 
@@ -300,18 +288,14 @@ def bootstrap(
     with httpx.Client() as client:
         geonode_manager = GeoNodeManager(client, geonode_base_url, geonode_username, geonode_password)
         geonode_manager.login()
-        existing_groups = geonode_manager.get_existing_groups()
         geoserver_manager = GeoServerManager(client, geoserver_base_url, geoserver_username, geoserver_password)
 
+        existing_groups = geonode_manager.get_existing_groups()
         for department in DepartmentName:
             _add_department(
                 geonode_manager,
-                department, [i['title'] for i in existing_groups]
-            )
-            typer.echo(f'Bootstrapping deparment {department.value} in geoserver')
-            _bootstrap_department_in_geoserver(
                 geoserver_manager,
-                department
+                department, [i['title'] for i in existing_groups]
             )
         typer.echo(f'Creating group {internal_group_name!r}...')
         geonode_manager.create_group(
@@ -326,20 +310,26 @@ def bootstrap(
 @app.command()
 def add_department(
         department: DepartmentName,
-        base_url: str = DEFAULT_GEONODE_BASE_URL,
-        username: str = DEFAULT_GEONODE_USERNAME,
-        password: str = DEFAULT_GEONODE_PASSWORD,
+        geonode_base_url: str = DEFAULT_GEONODE_BASE_URL,
+        geoserver_base_url: str = DEFAULT_GEOSERVER_BASE_URL,
+        geonode_username: str = DEFAULT_GEONODE_USERNAME,
+        geonode_password: str = DEFAULT_GEONODE_PASSWORD,
+        geoserver_username: str = DEFAULT_GEOSERVER_ADMIN_USERNAME,
+        geoserver_password: str = DEFAULT_GEOSERVER_ADMIN_PASSWORD
 ):
     with httpx.Client() as client:
-        manager = GeoNodeManager(client, base_url, username, password)
-        manager.login()
-        existing_groups = manager.get_existing_groups()
+        geonode_manager = GeoNodeManager(client, geonode_base_url, geonode_username, geonode_password)
+        geoserver_manager = GeoServerManager(client, geoserver_base_url, geoserver_username, geoserver_password)
+
+        geonode_manager.login()
+        existing_groups = geonode_manager.get_existing_groups()
         _add_department(
-            manager,
+            geonode_manager,
+            geoserver_manager,
             department,
             [i['title'] for i in existing_groups]
         )
-        manager.logout()
+        geonode_manager.logout()
 
 
 def get_geonode_group_name(department: DepartmentName) -> str:
@@ -351,7 +341,8 @@ def get_geoserver_group_name(department: DepartmentName) -> str:
 
 
 def _add_department(
-        manager: GeoNodeManager,
+        geonode_manager: GeoNodeManager,
+        geoserver_manager: GeoServerManager,
         department: DepartmentName,
         existing_groups: typing.List[str]
 ):
@@ -362,8 +353,9 @@ def _add_department(
     )
     if group_name not in existing_groups:
         typer.echo(f'Creating group {group_name!r}...')
-        manager.create_group(group_name, description)
-        geoserver_manager = GeoServerManager.from_geonode_manager(manager)
+        geonode_manager.create_group(group_name, description)
+
+        typer.echo(f'Bootstrapping deparment {department.value} in geoserver')
         _bootstrap_department_in_geoserver(geoserver_manager, department)
     else:
         typer.echo(f'group {group_name!r} already exists, ignoring...')
@@ -371,7 +363,11 @@ def _add_department(
 
 def _bootstrap_department_in_geoserver(
         manager: GeoServerManager,
-        department: DepartmentName
+        department: DepartmentName,
+        database: str,
+        database_user: str,
+        database_password: str,
+
 ):
     """Bootstrap a department in GeoServer
 
@@ -425,11 +421,12 @@ def _bootstrap_department_in_geoserver(
             manager.create_geofence_admin_rule(
                 department.value, role_name, UserRole.EDITOR)
         # 3. create the postgis db store
-        # manager.create_postgis_store(
-        #     workspace_name,
-        #     "postgis_store",
-        #     "localhost",
-        #     5432,
-        #     db,
-        #     user,
-        #     password)
+        manager.create_postgis_store(
+            workspace_name,
+            "postgis_store",
+            "localhost",
+            5432,
+            database,
+            database_user,
+            database_password
+        )

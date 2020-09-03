@@ -37,7 +37,6 @@ def bootstrap(
         minio_protocol: typing.Optional[str] = config['minio']['protocol']
 ):
     typer.echo('Bootstrapping DomiNode database...')
-
     dbadmin.bootstrap(
         db_admin_username=db_admin_username,
         db_admin_password=db_admin_password,
@@ -53,14 +52,5 @@ def bootstrap(
         minio_host,
         minio_port,
         minio_protocol
-    )
-
-    geonodeadmin.bootstrap(
-        geonode_base_url,
-        geoserver_base_url,
-        geonode_username,
-        geonode_password,
-        geoserver_username,
-        geoserver_password
     )
     typer.echo('Done!')
