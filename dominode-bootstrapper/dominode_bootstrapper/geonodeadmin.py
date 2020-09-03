@@ -183,40 +183,38 @@ class GeoServerManager:
         )
 
     def list_workspaces(self):
-        self.client.headers = self.headers
 
         response = self.client.get(
             f'{self.base_url}/rest/workspaces',
-            auth=(self.username, self.password)
+            auth=(self.username, self.password),
+            headers=self.headers
         )
         response.raise_for_status()
         return response.json()
 
     def create_workspace(self, name):
-        self.client.headers = self.headers
 
         response = self.client.post(
             f'{self.base_url}/rest/workspaces',
             auth=(self.username, self.password),
+            headers=self.headers,
             json={
                     "workspace": {
                         "name": name
                     }
                 }
         )
-        if response.status_code != 201:
-            return False
-        return True
+        response.raise_for_status
+        return response.json()
 
     def get_workspace(self, name):
-        self.client.headers = self.headers
 
         response = self.client.get(
             f'{self.base_url}/rest/workspaces/{name}',
-            auth=(self.username, self.password)
+            auth=(self.username, self.password),
+            headers=self.headers
         )
-        if response.status_code != 200:
-            return None
+        response.raise_for_status
         return response.json()
 
     def create_postgis_store(
@@ -240,22 +238,22 @@ class GeoServerManager:
               "dbtype": "postgis"
            }
         }
-        self.client.headers = self.headers
 
         response = self.client.post(
             f'{self.base_url}/rest/workspaces/{workspace_name}/datastores',
             auth=(self.username, self.password),
+            headers=self.headers,
             json=datastore
         )
         response.raise_for_status()
         return response.json()
 
     def list_geofence_admin_rules(self) -> typing.List:
-        self.client.headers = self.headers
 
         response = self.client.get(
             f'{self.base_url}/rest/geofence/adminrules',
-            auth=(self.username, self.password)
+            auth=(self.username, self.password),
+            headers=self.headers
         )
         response.raise_for_status()
         return response.json().get('rules', [])
@@ -271,11 +269,10 @@ class GeoServerManager:
         else:
             access = GeofenceAccess.USER
 
-        self.client.headers = self.headers
-
         response = self.client.post(
             f'{self.base_url}/rest/geofence/adminrules',
             auth=(self.username, self.password),
+            headers=self.headers,
             json={
                 'AdminRule': {
                     'priority': 0,
