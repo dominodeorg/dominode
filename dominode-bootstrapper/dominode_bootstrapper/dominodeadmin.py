@@ -63,5 +63,4 @@ def bootstrap(
         geoserver_username,
         geoserver_password
     )
-    geonodeadmin.bootstrap()
     typer.echo('Done!')

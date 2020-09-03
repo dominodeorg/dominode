@@ -197,15 +197,15 @@ class GeoServerManager:
         response = self.client.post(
             f'{self.base_url}/rest/workspaces',
             auth=(self.username, self.password),
+            headers=self.headers,
             json={
                     "workspace": {
                         "name": name
                     }
                 }
         )
-        if response.status_code != 201:
-            return False
-        return True
+        response.raise_for_status
+        return response.json()
 
     def get_workspace(self, name):
 
