@@ -53,4 +53,14 @@ def bootstrap(
         minio_port,
         minio_protocol
     )
+
+    geonodeadmin.bootstrap(
+        geonode_base_url,
+        geoserver_base_url,
+        geonode_username,
+        geonode_password,
+        geoserver_username,
+        geoserver_password
+    )
+
     typer.echo('Done!')
