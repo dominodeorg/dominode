@@ -53,14 +53,12 @@ def bootstrap(
         minio_port,
         minio_protocol
     )
-
     geonodeadmin.bootstrap(
-        geonode_base_url,
-        geoserver_base_url,
-        geonode_username,
-        geonode_password,
-        geoserver_username,
-        geoserver_password
+        geonode_base_url=config['geonode']['base_url'],
+        geonode_username=config['geonode']['admin_username'],
+        geonode_password=config['geonode']['admin_password'],
+        geoserver_base_url=config['geoserver']['base_url'],
+        geoserver_username=config['geoserver']['admin_username'],
+        geoserver_password=config['geoserver']['admin_password']
     )
-
     typer.echo('Done!')
