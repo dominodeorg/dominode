@@ -121,3 +121,7 @@ def get_departments(config: ConfigParser) -> typing.List[str]:
         if section.endswith(f'{separator}department'):
             result.append(section.partition(separator)[0])
     return result
+
+
+def get_geoserver_db_username(department: str):
+    return f'{department}_geoserver'

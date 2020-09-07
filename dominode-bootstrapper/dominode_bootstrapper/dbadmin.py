@@ -103,7 +103,7 @@ def bootstrap(
             geoserver_password = config[f'{department}-department'].get(
                 'geoserver_password', 'dominode')
             create_user(
-                f'{department}_geoserver',
+                utils.get_geoserver_db_username(department),
                 geoserver_password,
                 db_connection,
                 parent_roles=[generic_user_name]

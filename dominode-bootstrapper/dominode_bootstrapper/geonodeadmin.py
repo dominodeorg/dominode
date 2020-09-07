@@ -27,6 +27,7 @@ config = utils.load_config()
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 _ANY = '*'
+INTERNAL_GEONODE_GROUP_NAME = 'dominode-internal'
 
 
 class GeoNodeManager:
@@ -34,8 +35,6 @@ class GeoNodeManager:
     base_url: str
     username: str
     password: str
-    geoserver_application_client_id: str
-    geoserver_application_client_secret: str
 
     def __init__(
             self,
@@ -51,8 +50,6 @@ class GeoNodeManager:
             base_url if not base_url.endswith('/') else base_url.rstrip('/'))
         self.username = username
         self.password = password
-        self.geoserver_application_client_id = geoserver_client_id
-        self.geoserver_application_client_secret = geoserver_client_secret
 
     def login(self) -> httpx.Response:
         return self._modify_server_state(
@@ -79,6 +76,17 @@ class GeoNodeManager:
             group_profiles.extend(self.get_existing_groups(next_page))
         return group_profiles
 
+    def get_group(self, name: str) -> typing.Optional[typing.Dict]:
+        response = self.client.get(
+            f'{self.base_url}/api/group_profile/',
+            params={
+                'title': name
+            }
+        )
+        response.raise_for_status()
+        matched_groups = response.json().get('objects')
+        return matched_groups[0] if len(matched_groups) > 0 else None
+
     def create_group(self, name: str, description: str) -> httpx.Response:
         """Create a new GeoNode group.
 
@@ -95,24 +103,29 @@ class GeoNodeManager:
             access='public-invite'
         )
 
-    def get_geoserver_access_token(self) -> str:
-        response = self.client.post(
-            f'{self.base_url}/o/token/',
-            data={
-                'grant_type': 'password',
-                'username': self.username,
-                'password': self.password,
-            },
-            auth=(
-                self.geoserver_application_client_id,
-                self.geoserver_application_client_secret
-            )
+    def add_user(self, username: str, password: str, group: str):
+        user_added_response = self._modify_server_state(
+            f'{self.base_url}/en/admin/people/profile/add/',
+            username=username,
+            password1=password,
+            password2=password,
+            _save='Save'
         )
-        response.raise_for_status()
-        payload = response.json()
-        return payload['access_token']
+        user_added_response.raise_for_status()
+        added_to_group_response = self._modify_server_state(
+            f'{self.base_url}/groups/group/{group}/members_add/',
+            csrf_token_url=f'{self.base_url}/groups/group/{group}/members/',
+            user_identifiers=username
+        )
+        added_to_group_response.raise_for_status()
 
-    def _modify_server_state(self, url: str, **data):
+
+    def _modify_server_state(
+            self,
+            url: str,
+            csrf_token_url: typing.Optional[str] = None,
+            **data,
+    ):
         """Modify GeoNode state.
 
         This function is used in the context of making web requests as if we
@@ -127,7 +140,7 @@ class GeoNodeManager:
 
         """
 
-        idempotent_response = self.client.get(url)
+        idempotent_response = self.client.get(csrf_token_url or url)
         idempotent_response.raise_for_status()
         request_data = data.copy()
         request_data.update({
@@ -274,6 +287,31 @@ class GeoServerManager:
         response.raise_for_status()
         return response
 
+    def create_geofence_data_rule(
+            self,
+            workspace: str,
+            role_name: str,
+    ):
+        headers = self.headers.copy()
+        # for some unknown reason the geofence /rules endpoint is not able
+        # to cope with the ´application/json´ Accept header (even tough the
+        # /adminrules endpoint does not have a problem with it)
+        del headers['Accept']
+        response = self.client.post(
+            f'{self.base_url}/rest/geofence/rules',
+            auth=(self.username, self.password),
+            headers=headers,
+            json={
+                'Rule': {
+                    'roleName': role_name,
+                    'workspace': workspace,
+                    'access': 'ALLOW'
+                },
+            }
+        )
+        response.raise_for_status()
+        return response
+
 
 @app.command()
 def bootstrap(
@@ -295,6 +333,7 @@ def bootstrap(
         )
         geonode_manager.login()
         existing_groups = geonode_manager.get_existing_groups()
+        existing_group_names = [g.get('title') for g in existing_groups]
         geoserver_manager = GeoServerManager(
             client, geoserver_base_url,
             geoserver_admin_username, geoserver_admin_password
@@ -310,7 +349,7 @@ def bootstrap(
                 )
             else:
                 geonode_group_name = get_geonode_group_name(department)
-                if geonode_group_name not in existing_groups:
+                if geonode_group_name not in existing_group_names:
                     add_department(
                         department=department,
                         geonode_manager=geonode_manager,
@@ -325,13 +364,41 @@ def bootstrap(
                         f'Department {department} has already been '
                         f'bootstrapped, skipping...'
                     )
-        internal_group_name = 'dominode-internal'
-        typer.echo(f'Creating group {internal_group_name!r}...')
+        typer.echo(f'Creating group {INTERNAL_GEONODE_GROUP_NAME!r}...')
         geonode_manager.create_group(
-            internal_group_name,
+            INTERNAL_GEONODE_GROUP_NAME,
             'A group for internal DomiNode users'
         )
         geonode_manager.logout()
+
+
+@app.command()
+def add_department_user(
+        username: str,
+        password: str,
+        department: str,
+        role: typing.Optional[UserRole] = UserRole.REGULAR_DEPARTMENT_USER,
+        geonode_base_url: str = config['geonode']['base_url'],
+        geonode_admin_username: str = config['geonode']['admin_username'],
+        geonode_admin_password: str = config['geonode']['admin_password'],
+):
+    with httpx.Client() as http_client:
+        manager = GeoNodeManager(
+            http_client, geonode_base_url,
+            geonode_admin_username, geonode_admin_password
+        )
+        manager.login()
+        if role == UserRole.EDITOR:
+            name = get_geonode_group_name(department)
+        else:
+            name = INTERNAL_GEONODE_GROUP_NAME
+        group = manager.get_group(name)
+        if group is None:
+            raise RuntimeError(f'group {name!r} not found')
+        typer.echo(f'Adding user {username!r} to group {group["title"]}...')
+        manager.add_user(username, password, group['slug'])
+        manager.logout()
+    typer.echo('Done!')
 
 
 def get_geonode_group_name(department: str) -> str:
@@ -363,7 +430,7 @@ def add_department(
     _bootstrap_department_in_geoserver(
         geoserver_manager,
         department,
-        postgis_user='geoserver_user',
+        postgis_user=utils.get_geoserver_db_username(department),
         postgis_password=postgis_password,
         postgis_db_host=postgis_db_host,
         postgis_db_port=postgis_db_port,
@@ -413,6 +480,8 @@ def _bootstrap_department_in_geoserver(
             typer.echo(f'Creating Geoserver admin rule for {department!r}...')
             manager.create_geofence_admin_rule(
                 department, role_name, UserRole.EDITOR)
+            typer.echo(f'Creating Geoserver data rule for {department!r}...')
+            manager.create_geofence_data_rule(department, role_name)
         manager.create_postgis_store(
             workspace_name=department,
             store_name=f"dominode_db_{department}",
