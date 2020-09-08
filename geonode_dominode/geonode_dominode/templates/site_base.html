@@ -1,12 +1,129 @@
-{% extends "base.html" %}
+{% extends 'base.html' %}
+{% load i18n avatar_tags staticfiles %}
 {% block extra_head %}
-      <link href="{{ STATIC_URL }}css/site_base.css" rel="stylesheet"/>
-{% endblock %}
-{% block extra_tab %}
-{% comment %}
-Add Tab for Third Party Apps
-<li>
- <a href="{{ PROJECT_ROOT }}app">App</a>
-</li>
-{% endcomment %}
-{% endblock %}
+<link href="{{ STATIC_URL }}css/dominode_base.css" rel="stylesheet"/>
+{% endblock extra_head %}
+ {% block header %}
+<!-- Top -->
+<a id="top_of_page" name="top_of_page"></a>
+<!-- End Top -->
+
+
+<!-- GoCD Strip - Contains GoCD Header and Search Bar -->
+<div id="gocd">
+	<!-- GoCD Header - Government of Dominica Header-->
+	<div class="gocd_header">
+		<a class="gocd_coa" title="Link to http://www.dominica.gov.dm" href="http://www.dominica.gov.dm" target="_blank"> <img title="Government of the Commonwealth of Dominica Website" src="{{ STATIC_URL }}img/gocd_coa.png" alt="Government of the Commonwealth of Dominica Website" /> </a>
+	</div>
+	<!-- End of GoCD Header -->
+</div>
+<!-- End of GoCD Strip -->
+<nav class="navbar navbar-inverse" role="navigation">
+      <div class="container">
+            <div class="navbar-header">
+                  <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar">
+                        <span class="sr-only">Toggle navigation</span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                  </button>
+                  <a class="navbar-brand" href="{% url 'home' %}"><img src="{{ STATIC_URL }}img/logo_100_2.png" /></a>
+            </div>
+            <!-- Navbar Collapse -->
+            <div id="navbar" class="navbar-collapse collapse">
+                  <ul class="nav navbar-nav">{% block tabs %}
+                        <li id="nav_home">
+                            <a href="{% url 'home' %}">{% trans "Home" %}</a>
+                        </li>
+                        <li id="nav_layers">
+                              <a href="{% url 'layer_browse' %}">{% trans "Layers" %}</a>
+                        </li>
+                        <li id="nav_maps">
+                              <a href="{% url 'maps_browse' %}">{% trans "Maps" %}</a>
+                        </li>
+                        <li id="nav_documents">
+                              <a href="{% url  'document_browse' %}">{% trans "Documents" %}</a>
+                        </li>
+                        <!--
+						<li id="nav_people">
+                              <a href="{% url 'profile_browse' %}">{% trans "People" %}</a>
+                        </li>
+                        <li id="nav_groups">
+                              <a href="{% url 'group_list' %}">{% trans "Groups" %}</a>
+                        </li>
+						-->
+						{% endblock %}</ul>
+                  <form class="navbar-form" id="search" action="{% url 'search' %}">
+                        <div class="col-md-3">
+                              <div class="input-group">{% if HAYSTACK_SEARCH %}
+                                    <input id="search_input" type="text" placeholder="Search" class="form-control" name="q">{% else %}
+                                    <input id="search_input" type="text" placeholder="Search" class="form-control" name="title__icontains">{% endif %}
+                                    <span class="input-group-btn">
+                                          <button class="btn btn-primary" type="submit">
+                                                <i class="fa fa-search"></i>
+                                          </button>
+                                    </span>
+                              </div>
+                        </div>
+                  </form>
+                  <ul class="nav navbar-nav navbar-right">{% if not user.is_authenticated and REGISTRATION_OPEN %}
+                        <li>
+                              <a href="{% url 'account_signup' %}">{% trans "Register" %}</a>
+                        </li>{% endif %} {% if user.is_authenticated %}
+                        <li>
+                              <a href="#" data-toggle="modal" data-target="#UserModal" role="button" aria-expanded="false">
+                {% avatar user 30 %} {{ user.username }}
+              </a>
+                        </li>{% else %}
+                        <li>
+                              <a href="#" data-toggle="modal" data-target="#SigninModal" role="button">
+                {% trans "Sign in" %}
+              </a>
+                        </li>{% endif %}</ul>
+            </div>
+            <!-- End Navbar Collaps -->
+      </div>
+</nav>{% endblock header %}
+
+ {% block footer %}
+
+     <footer class="footer">
+      <div class="container">
+        <div class="row">
+          <div class="col-md-12">
+            <!-- {% trans "Powered by" %} <a href="http://geonode.org">{% trans "GeoNode" %}</a> <em>{% trans "version" %} {{ VERSION }}</em> |
+            <a href="{% url "developer" %}">{% trans "Developers" %}</a> |
+            <a href="{% url "about" %}">{% trans "About" %}</a>-->
+
+			<div class="donors">
+				<div class="donor_logo">
+					<a href="http://www.worldbank.org/" target="_blank"><img src="{{ STATIC_URL }}img/worldbank.jpg" alt="World Bank"></a>
+				</div>
+
+				<div class="donor_logo">
+					<a href="https://www.gfdrr.org/acp-eu-ndrr-program-video" target="_blank"><img src="{{ STATIC_URL }}img/acp-eu_gfdrr.jpg" alt="Global Facility for Disaster Reduction and Recovery"></a>
+				</div>
+			</div>
+
+			<div class="copyright">
+				<p>
+					Copyright &copy; 2016 - Government of the Commonwealth of Dominica
+				</p>
+
+				<p class="top_of_page">
+					<a href="#top_of_page" id="go_to_top">To Top</a>
+				</p>
+			</div>
+          </div>
+          <div class="col-md-4">
+            <label class="hidden">{% trans "Language" %}</label>
+            {% if csrf_token != "NOTPROVIDED" %}
+            {% get_current_language as LANGUAGE %}
+
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </footer>
+
+    {% endblock footer %}

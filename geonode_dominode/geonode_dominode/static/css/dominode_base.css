@@ -1,0 +1,371 @@
+/**********************************************************************************
+***********************************************************************************
+DomiNode Style Sheet
+Styles by Charles Louis
+
+Layout:
+General (applies to entire site)
+Government of Dominica Header
+Header
+Navigation
+**********************************************************************************/
+
+/**********************************************************************************
+***********************************************************************************
+General
+**********************************************************************************/
+html		{
+	height: 100%;
+}
+
+body 	{
+	padding-top: 0;
+	height: 100%;
+	background-color: #222;
+}
+
+/**********************************************************************************
+***********************************************************************************
+Government of Dominca Header
+**********************************************************************************/
+#gocd 	{
+	background-color: #fff;
+	height: 60px;
+    	box-shadow: 0 -2px 4px #666 inset;
+}
+
+.gocd_header 	{
+	max-width: 1200px;
+	margin: auto;
+	padding-top: 0.5em;
+}
+
+.gocd_coa img 	{
+	max-width: 350px;
+}
+/**********************************************************************************
+***********************************************************************************
+Navigation
+**********************************************************************************/
+.navbar-header 	{
+	width: 115px;
+	margin-right: 10px;
+}
+
+.navbar-brand 	{
+	background: none;
+	display: inline-block;
+	padding: 0;
+	margin: 0;
+	height: 100%;
+	text-indent: 0;
+}
+
+.navbar-brand img 	{
+	height: 60px;
+    	padding: 0;
+    	margin: 5px 0;
+    	display: block;
+	float: left;
+}
+
+.navbar	{
+	background: url(../img/flag-dm.jpg) 0 20%;
+	background-size: cover !important;
+   	height: 75px;
+	border: none;
+}
+
+.nav.navbar-nav.navbar-right 	{
+	margin-right: 0.25em;
+}
+
+.nav.navbar-nav.navbar-right li:last-child 	{
+	border-right: 2px solid white;
+}
+
+.nav.navbar-nav.navbar-right li a:hover 	{
+	color: #77AA57;
+}
+
+.dominode-home 	{
+	display: block;
+    	float: left;
+    	margin-top: -45px;
+    	margin-left: 70px;
+}
+
+body:not(.home) .navbar 	{
+	box-shadow: 0 2px 4px #666;
+}
+
+#search .col-md-3, .navbar-nav 	{
+	margin-top: 10px;
+}
+
+#search .col-md-3 	{
+	padding-right: 0;
+}
+
+.nav.navbar-nav.navbar-right li a img 	{
+	box-shadow: 0 0 6px #dedede;
+    	border-radius: 5px;
+}
+
+.nav.navbar-nav li a, .dominode-home 	{
+	color: #FFF;
+	font-family: 'Lato', sans-serif;
+	font-weight: bold;
+    	font-size: 12pt;
+	text-shadow: 1px 2px 3px #000;
+	text-transform: uppercase;
+}
+
+.nav.navbar-nav li a:hover, .dominode-home:hover 	{
+	color: #942020;
+}
+
+.navbar-form .col-md-3 	{
+	float: right;
+}
+/**********************************************************************************
+***********************************************************************************
+Jumbotron
+**********************************************************************************/
+#wrap .jumbotron 	{
+	background-color: #555;
+    	border: none;
+	padding-top: 10px;
+   	padding-bottom: 20px;
+	box-shadow: 0 3px 5px #222 inset;
+    	margin-top: -12px;
+}
+
+.jumbotron .container::before 	{
+	display: none;
+}
+
+.jumbotron h1 	{
+	margin-top: 10px;
+}
+
+.jumbotron a 	{
+	color: #479FDF;
+}
+
+.jumbotron + .container .btn:hover 	{
+	color: #ffffff;
+}
+
+/**********************************************************************************
+***********************************************************************************
+Main Content Area
+**********************************************************************************/
+body:not(.home) #wrap 	{
+	padding-top: 0px;
+}
+
+.home-facets a.btn	{
+	background-color: #479FDF;
+	border: 1px solid #666;
+	box-shadow: 2px 2px 4px #555;
+}
+
+.home-facets a.btn:hover 	{
+	box-shadow: 2px 2px 4px #555 inset;
+}
+
+
+#file-uploader input 	{
+	background-color: #dedede;
+	border: none;
+	padding-top: 2em;
+	padding-bottom: 2em;
+	padding-bottom: 2em;
+}
+
+.layers.upload .col-md-8 section .btn 	{
+	background-color: #479FDF;
+	border: none;
+   	box-shadow: 1px 1px 2px #666;
+	color: #FFF;
+	margin-right: 0.5 em;
+}
+
+.layers.upload .col-md-8 section .btn:hover 	{
+	box-shadow: 1px 1px 2px #666 inset;
+}
+
+.col-xs-12.item-container .col-xs-12.profile-avatar	{
+	border: none;
+    	box-shadow: 0 2px 6px #777;
+    	border-radius: 0.5em;
+    	padding: 0.5em;
+}
+
+.col-xs-12.item-container .col-xs-12.profile-avatar .row 	{
+	width: 99%;
+    	margin: auto;
+}
+
+/* Display "Download Layer" button */
+.col-md-4 ul.list-group li.list-group-item 		{
+	display: block;
+}
+
+/* Do not display owner name in Layer List */
+.col-xs-12.item-items ul.list-inline li:first-child {
+	display: none;
+}
+
+/* Do not display owner name in Layer View */
+.col-md-8 .tab-content dl.dl-horizontal:first-child dt:last-of-type, .col-md-8 .tab-content dl.dl-horizontal:first-child dd:last-child 	{
+	display: none;
+}
+
+/* Do not display Owner information in right column */
+.col-md-4 li.list-group-item:last-of-type 	{
+	display: none;
+}
+/**********************************************************************************
+***********************************************************************************
+Footer
+**********************************************************************************/
+footer.footer 	{
+	background-color: #222;
+}
+
+.donors {
+	height: 50px;
+	margin-top: 5px;
+	float: left;
+}
+
+.footer .donor_logo 	{
+	float: left;
+}
+
+.donor_logo {
+    	height: 100%;
+    	display: block;
+    	padding: 0 1em;
+}
+
+.donor_logo img {
+	height: 100%;
+}
+
+.copyright 	{
+	float: right;
+}
+
+.copyright p 	{
+	margin-top: 1.25em;
+	color: #fff;
+}
+
+.copyright p:first-child 	{
+	float: left;
+}
+
+.copyright .top_of_page 		{
+	float: right;
+	margin-left: 2em;
+}
+
+#go_to_top 		{
+	color: #FFF;
+	padding: 1em;
+    	background-color: #428bca;
+    	border-radius: 1em;
+    	box-shadow: 1px 2px 3px #333;
+    	font-weight: bold;
+    	text-decoration: none;
+}
+
+#go_to_top:hover 	{
+	background-color: #3276b1;
+	box-shadow: 1px 2px 3px #333 inset;
+}
+
+/**********************************************************************************
+***********************************************************************************
+Mobile Tweaks
+**********************************************************************************/
+@media handheld, screen and (max-width: 960px)
+{
+	/* Navigation Bar */
+	.navbar 	{
+		background: url(../img/flag-dm.jpg) 65% 20%;
+		z-index: 10;
+	}
+
+	button.navbar-toggle 	{
+		background-color: #555;
+		float: left;
+		margin-left: 1em;
+		margin-top: 1em;
+	}
+
+	.navbar-brand 	{
+		width: 30px;
+		float: right;
+	}
+
+	.navbar-collapse.collapse.in 	{
+		background-color: #0E7E20;
+	}
+
+	.navbar-collapse.collapse.in .col-md-3	{
+		float: none;
+	}
+
+	.nav.navbar-nav.navbar-right 	{
+		margin-right: none;
+	}
+
+	.nav.navbar-nav.navbar-right li:last-child 	{
+		border-right: none;
+	}
+
+	nav > ul.pagination.pull-right 	{
+		float: none !important;
+		display: inline-block;
+		margin: auto;
+	}
+
+	/*Maps*/
+	.x-panel.x-panel-noborder 	{
+		margin: auto;
+		min-width: 330px;
+	}
+
+	/* Footer */
+	.donors 	{
+		float: none;
+	}
+
+	.donor_logo 	{
+		width: 100%;
+		margin-bottom: 1em;
+	}
+
+	.donor_logo img 	{
+		display: block;
+		margin: auto;
+	}
+	.copyright 	{
+		float: none;
+		margin-top: 0.5em;
+		text-align: center;
+	}
+
+	.copyright p:first-child 	{
+		float: none;
+	}
+
+	.copyright .top_of_page 		{
+		float: none;
+		margin-left: 0 !important;
+	}
+}
