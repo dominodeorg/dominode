@@ -1,0 +1,72 @@
+version: '3.4'
+
+
+# Common Django template for Geonode, Celery and Celerycam services below
+x-common-django:
+  &default-common-django
+  image: dominode/geonode:django-3.0
+  working_dir: /opt/geonode_dominode
+  environment:
+    - DEBUG=True
+  volumes:
+    - ../../:/opt/geonode_dominode/
+    - ./_volume_static:/spcgeonode-static/
+    - ./_volume_media:/spcgeonode-media/
+
+services:
+  django:
+    << : *default-common-django
+    entrypoint: [ "/opt/geonode_dominode/scripts/spcgeonode/django/docker-entrypoint.sh" ]
+    command: "uwsgi --chdir=/opt/geonode_dominode --module=geonode.wsgi --socket=:8000 --http=127.0.0.1:8001 --processes=5 --py-autoreload=2"
+  celery:
+    << : *default-common-django
+    command: 'celery worker --app=geonode.celery_app:app -l debug'
+  celerybeat:
+    << : *default-common-django
+    command: 'celery beat --app=geonode.celery_app:app --pidfile="/celerybeat.pid" -l debug'
+  celerycam:
+    << : *default-common-django
+    command: 'celery events --app=geonode.celery_app:app --pidfile="/celeryev.pid" --camera=django_celery_monitor.camera.Camera --frequency=2.0 -l debug'
+
+  nginx:
+    image: geonode/spcgeonode:nginx-3.0
+    volumes:
+      - ./_volume_static:/spcgeonode-static/
+      - ./_volume_media:/spcgeonode-media/
+      - ./_volume_certificates:/spcgeonode-certificates/
+
+  geoserver:
+    image: geonode/spcgeonode:geoserver-3.0
+    volumes:
+      - ./_volume_geodatadir:/spcgeonode-geodatadir/
+
+  letsencrypt:
+    image: geonode/spcgeonode:letsencrypt-3.0
+    volumes:
+      - ./_volume_certificates:/spcgeonode-certificates/
+
+  pgdumper_nogeo:
+    image: geonode/spcgeonode:pgdumper-3.0
+    volumes:
+      - ./_volume_pgdumps:/spcgeonode-pgdumps/
+
+  pgdumper_geo:
+    image: geonode/spcgeonode:pgdumper-3.0
+    volumes:
+      - ./_volume_pgdumps:/spcgeonode-pgdumps/
+
+  rclone:
+    image: geonode/spcgeonode:rclone-3.0
+    volumes:
+      - ./_volume_pgdumps:/spcgeonode-pgdumps/
+      - ./_volume_media:/spcgeonode-media/
+      - ./_volume_geodatadir:/spcgeonode-geodatadir/
+
+  postgres:
+    image: kartoza/postgis:12
+    environment:
+      POSTGRES_USER: ${GEONODE_DATABASE_USER}
+      POSTGRES_PASSWORD: ${GEONODE_DATABASE_PASSWORD}
+      POSTGRES_DB: "${GEONODE_DATABASE},${GEONODE_GEODATABASE}"
+    ports:
+      - "5432:5432"

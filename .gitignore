@@ -7,3 +7,6 @@ qgis-projects/atlas
 scripts/.env
 .python-version
 **/__pycache__
+
+docker-compose.override.yml
+.env
