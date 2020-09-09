@@ -72,11 +72,11 @@ Navigation
 .navbar	{
 	background: url(../img/flag-dm.jpg) 0 20%;
 	background-size: cover !important;
-   	height: 75px;
 	border: none;
 }
 
 .nav.navbar-nav.navbar-right 	{
+	margin-top: 0;
 	margin-right: 0.25em;
 }
 
@@ -132,6 +132,14 @@ body:not(.home) .navbar 	{
 ***********************************************************************************
 Jumbotron
 **********************************************************************************/
+.home #wrap {
+	margin-top: -32px;
+}
+
+body:not(.home) #wrap {
+	margin-top: -22px;
+}
+
 #wrap .jumbotron 	{
 	background-color: #555;
     	border: none;

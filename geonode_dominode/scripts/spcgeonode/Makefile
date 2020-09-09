@@ -13,3 +13,6 @@ logs:
 
 shell:
 	@docker-compose exec $(or ${SERVICE},django) /bin/sh
+
+collectstatic:
+	@docker-compose exec django ./manage.py collectstatic --noinput

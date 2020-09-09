@@ -66,20 +66,53 @@
                               </div>
                         </div>
                   </form>
-                  <ul class="nav navbar-nav navbar-right">{% if not user.is_authenticated and REGISTRATION_OPEN %}
+                  <ul class="nav navbar-nav navbar-right">
+                        {% if not user.is_authenticated and REGISTRATION_OPEN %}
                         <li>
                               <a href="{% url 'account_signup' %}">{% trans "Register" %}</a>
-                        </li>{% endif %} {% if user.is_authenticated %}
+                        </li>
+                        {% endif %}
+                        {% if user.is_authenticated %}
                         <li>
-                              <a href="#" data-toggle="modal" data-target="#UserModal" role="button" aria-expanded="false">
-                {% avatar user 30 %} {{ user.username }}
-              </a>
-                        </li>{% else %}
-                        <li>
-                              <a href="#" data-toggle="modal" data-target="#SigninModal" role="button">
-                {% trans "Sign in" %}
-              </a>
-                        </li>{% endif %}</ul>
+                          <a href="#" class="dropdown-toggle avatar" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
+                            {% autoescape off %}{% avatar user 40 %}{% endautoescape %}
+                            {% with full_name=user.first_name|add:' '|add:user.last_name %}
+                              {% if full_name.strip %}
+                                {{ full_name | truncatechars:20 }}
+                              {% else %}
+                                {{ user.username | truncatechars:20 }}
+                              {% endif %}
+                            {% endwith %}
+                            <i class="fa fa-angle-down fa-lg"></i>
+                          </a>
+                          <ul class="dropdown-menu">
+                            <li><a href="{{ user.get_absolute_url }}">{% trans "Profile" %}</a></li>
+                            <li><a href="{% url "recent-activity" %}">{% trans "Recent Activity" %}</a></li>
+                            {% if FAVORITE_ENABLED and user.is_authenticated %}
+                            <li><a href="{% url "favorite_list" %}">{% trans "Favorites" %}</a></li>
+                            {% endif %}
+                            <li><a href="{% url "messages_inbox" %}">{% trans "Inbox" %}</a></li>
+                            {% if user.is_superuser or user.is_staff %}
+                                <li role="separator" class="divider"></li>
+                                <li><a href="{% url "admin:index" %}">{% trans "Admin" %}</a></li>
+                                {% if 'geonode.geoserver' in INSTALLED_APPS %}
+                                <li><a href="{{ OGC_SERVER.default.WEB_UI_LOCATION }}">GeoServer</a></li>
+                                {% endif %}
+                                {% if USE_MONITORING %}
+                                <li role="separator" class="divider"></li>
+                                <li><a href="{% url "monitoring:index" %}">{% trans "Monitoring & Analytics" %}</a></li>
+                                {% endif %}
+                            {% endif %}
+                            <li role="separator" class="divider"></li>
+                            <li><a href="{% url "help" %}">{% trans "Help" %}</a></li>
+                            <li role="separator" class="divider"></li>
+                            <li><a href="{% if SITEURL|default:""|slice:"-1:" == "/" %}{{SITEURL}}{% else %}{{SITEURL}}/{% endif %}account/logout/">{% trans "Log out" %}</a></li>
+                          </ul>
+                        </li>
+                        {% else %}
+                        <li><a href="#" data-toggle="modal" data-target="#SigninModal" role="button" >{% trans "Sign in" %} </a></li>
+                        {% endif %}
+                  </ul>
             </div>
             <!-- End Navbar Collaps -->
       </div>
