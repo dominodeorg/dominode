@@ -1,0 +1,97 @@
+{{- if .Values.local_persistence.enabled }}
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: media-dir
+  labels:
+    provisioner: local
+spec:
+  storageClassName: {{ .Values.local_persistence.storageClass }}
+  capacity:
+    storage: 8Gi
+  accessModes:
+    - ReadWriteOnce
+  claimRef:
+    name: media-dir
+    namespace: {{ .Release.Namespace }}
+  hostPath:
+    path: {{ .Values.local_persistence.media | quote }}
+...
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: static-dir
+  labels:
+    provisioner: local
+spec:
+  storageClassName: {{ .Values.local_persistence.storageClass }}
+  capacity:
+    storage: 8Gi
+  accessModes:
+    - ReadWriteOnce
+  claimRef:
+    name: static-dir
+    namespace: {{ .Release.Namespace }}
+  hostPath:
+    path: {{ .Values.local_persistence.static | quote }}
+...
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: data-dominode-postgis-0
+  labels:
+    provisioner: local
+spec:
+  storageClassName: {{ .Values.local_persistence.storageClass }}
+  capacity:
+    storage: 8Gi
+  accessModes:
+    - ReadWriteOnce
+  claimRef:
+    name: data-dominode-postgis-0
+    namespace: {{ .Release.Namespace }}
+  hostPath:
+    path: {{ .Values.local_persistence.postgis | quote }}
+...
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: dominode-geoserver-geoserver-data-dir
+  labels:
+    provisioner: local
+spec:
+  storageClassName: {{ .Values.local_persistence.storageClass }}
+  capacity:
+    storage: 8Gi
+  accessModes:
+    - ReadWriteOnce
+  claimRef:
+    name: dominode-geoserver-geoserver-data-dir
+    namespace: {{ .Release.Namespace }}
+  hostPath:
+    path: {{ .Values.local_persistence.geoserver_data_dir | quote }}
+...
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: dominode-geoserver-geowebcache-data-dir
+  labels:
+    provisioner: local
+spec:
+  storageClassName: {{ .Values.local_persistence.storageClass }}
+  capacity:
+    storage: 8Gi
+  accessModes:
+    - ReadWriteOnce
+  claimRef:
+    name: dominode-geoserver-geowebcache-cache-dir
+    namespace: {{ .Release.Namespace }}
+  hostPath:
+    path: {{ .Values.local_persistence.geowebcache_cache_dir | quote }}
+...
+{{- end }}

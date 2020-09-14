@@ -1,0 +1,19 @@
+apiVersion: v2
+name: dominode
+version: 0.1
+appVersion: 3.0.0
+description: Chart for Dominode
+keywords:
+  - GeoNode
+  - GIS
+  - GeoServer
+sources:
+  - https://github.com/dominodeorg/dominode
+maintainers:
+  - name: lucernae
+    email: lana.pcfre@gmail.com
+engine: gotpl
+dependencies:
+  - name: geonode
+    version: 0.2.1
+    repository: https://kartoza.github.io/charts

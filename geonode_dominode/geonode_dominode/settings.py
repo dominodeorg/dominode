@@ -28,6 +28,24 @@ except ImportError:
     from urllib2 import urlopen, Request
     from urlparse import urlparse, urlunparse
 # Load more settings from a file called local_settings.py if it exists
+
+GEONODE_DATABASE_USER = os.environ.get('GEONODE_DATABASE_USER')
+GEONODE_DATABASE_PASSWORD = os.environ.get('GEONODE_DATABASE_PASSWORD')
+GEONODE_DATABASE = os.environ.get('GEONODE_DATABASE')
+GEONODE_DATABASE_HOST = os.environ.get('GEONODE_DATABASE_HOST')
+GEONODE_DATABASE_PORT = os.environ.get('GEONODE_DATABASE_PORT')
+DATABASE_URL = 'postgres://{}:{}@{}:{}/{}'.format(GEONODE_DATABASE_USER, GEONODE_DATABASE_PASSWORD, GEONODE_DATABASE_HOST, GEONODE_DATABASE_PORT, GEONODE_DATABASE)
+# Geodatabase connection details for datastore
+GEONODE_GEODATABASE_USER = os.environ.get('GEONODE_GEODATABASE_USER')
+GEONODE_GEODATABASE_PASSWORD = os.environ.get('GEONODE_GEODATABASE_PASSWORD')
+GEONODE_GEODATABASE = os.environ.get('GEONODE_GEODATABASE')
+GEONODE_GEODATABASE_HOST = os.environ.get('GEONODE_GEODATABASE_HOST')
+GEONODE_GEODATABASE_PORT = os.environ.get('GEONODE_GEODATABASE_PORT')
+GEODATABASE_URL = 'postgis://{}:{}@{}:{}/{}'.format(GEONODE_GEODATABASE_USER, GEONODE_GEODATABASE_PASSWORD, GEONODE_GEODATABASE_HOST, GEONODE_GEODATABASE_PORT, GEONODE_GEODATABASE)
+# import generic settings
+os.environ['DATABASE_URL'] = DATABASE_URL
+os.environ['GEODATABASE_URL'] = GEODATABASE_URL
+
 try:
     from geonode_dominode.local_settings import *
 #    from geonode.local_settings import *

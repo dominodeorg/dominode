@@ -1,0 +1,52 @@
+---
+global:
+  geonodeSiteName: dominode.test
+  geoserverURL: http://dominode.test/geoserver/
+  adminUser: admin
+  adminPassword:
+    value: admin
+  databaseUsername: dominode
+  databaseName: dominode_app
+  databasePassword:
+    value: dominode
+  geodatabaseUsername: dominode
+  geodatabaseName: dominode
+  geodatabasePassword:
+    value: dominode
+  geoserverAdminPassword:
+    value: geoserveradmin
+  geonodeCommand: |
+    ["/opt/geonode_dominode/scripts/spcgeonode/django/docker-entrypoint.sh"]
+  geonodeArgs: |
+    ["uwsgi","--chdir=/opt/geonode_dominode","--module=geonode.wsgi","--socket=:8000","--http=0.0.0.0:8080","--processes=5","--buffer-size=8192"]
+  djangoSettingsModule: geonode_dominode.settings
+
+geonode:
+  enabled: true
+  image:
+    repository: dominode/geonode
+    tag: "django-3.0"
+    pullPolicy: IfNotPresent
+
+  geoserver:
+    enabled: true
+
+  postgis:
+    enabled: true
+    postgresqlUsername: dominode
+    postgresqlDatabase: dominode_app,dominode
+
+
+local_persistence:
+  enabled: false
+  storageClass: ""
+  media:
+    host_path: /tmp/dominode-media
+  static:
+    host_path: /tmp/dominode-static
+  postgis:
+    host_path: /tmp/dominode-postgis
+  geoserver_data_dir:
+    host_path: /tmp/dominode-geoserver-data-dir
+  geowebcache_cache_dir:
+    host_path: /tmp/dominode-geowebcache-cache-dir
