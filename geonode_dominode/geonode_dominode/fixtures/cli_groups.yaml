@@ -1,0 +1,11 @@
+- model: geonode_dominode.cli
+  pk: 1
+  fields:
+    name: Update Layers
+    slug: update-layers
+    command: |
+      python manage.py updatelayers \
+          --skip-geonode-registered \
+          --skip-unadvertised \
+          --remove-deleted \
+          --permissions '{"users": {"AnonymousUser: []"}}'
