@@ -18,23 +18,31 @@ logger = get_task_logger(__name__)
 def task_cli_sync_geoserver(workspace_name, username):
     # construct management command arguments
     out = StringIO()
-    result = gs_slurp(
-        ignore_errors=False,
-        verbosity=1,
-        owner=username,
-        console=out,
-        workspace=workspace_name,
-        store=None,
-        filter=None,
-        skip_unadvertised=True,
-        skip_geonode_registered=True,
-        remove_deleted=True,
-        permissions={
-            'users': {
-                'AnonymousUser': []
-            }
-        },
-        execute_signals=True)
+    try:
+        result = gs_slurp(
+            ignore_errors=False,
+            verbosity=1,
+            owner=username,
+            console=out,
+            workspace=workspace_name,
+            store=None,
+            filter=None,
+            skip_unadvertised=True,
+            skip_geonode_registered=True,
+            remove_deleted=True,
+            permissions={
+                'users': {
+                    'AnonymousUser': []
+                }
+            },
+            execute_signals=True)
+        error_message = None
+    except BaseException as e:
+        result = None
+        if hasattr(e, 'message'):
+            error_message = e.message
+        else:
+            error_message = str(e)
 
     # Send email to user
     User = get_user_model()
@@ -45,6 +53,7 @@ def task_cli_sync_geoserver(workspace_name, username):
     context = {
         'username': username,
         'output': out.getvalue(),
+        'error_message': error_message,
         'result': result
     }
     text_content = render_to_string(
