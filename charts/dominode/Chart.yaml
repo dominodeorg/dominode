@@ -15,5 +15,5 @@ maintainers:
 engine: gotpl
 dependencies:
   - name: geonode
-    version: 0.2.1
+    version: 0.3.0
     repository: https://kartoza.github.io/charts

@@ -20,6 +20,24 @@ global:
   geonodeArgs: |
     ["uwsgi","--chdir=/opt/geonode_dominode","--module=geonode.wsgi","--socket=:8000","--http=0.0.0.0:8080","--processes=5","--buffer-size=8192"]
   djangoSettingsModule: geonode_dominode.settings
+  celeryAsync:
+    enabled: true
+    commandSpec:
+      celery:
+        command: |
+          ["/usr/local/bin/celery"]
+        args: |
+          ["worker","--app=geonode_dominode.celeryapp:app","-l=debug"]
+      celerybeat:
+        command: |
+          ["/usr/local/bin/celery"]
+        args: |
+          ["beat","--app=geonode_dominode.celeryapp:app","--pidfile=/celerybeat.pid","-l=debug"]
+      celerycam:
+        command: |
+          ["/usr/local/bin/celery"]
+        args: |
+          ["events","--app=geonode_dominode.celeryapp:app","--pidfile=/celeryev.pid","--camera=django_celery_monitor.camera.Camera","--frequency=2.0","-l=debug"]
 
 geonode:
   enabled: true
@@ -36,6 +54,12 @@ geonode:
     postgresqlUsername: dominode
     postgresqlDatabase: dominode_app,dominode
 
+  rabbitmq:
+    enabled: true
+    auth:
+      username: rabbit
+      password: alice
+      erlangCookie: aliceinwonderland
 
 local_persistence:
   enabled: false
