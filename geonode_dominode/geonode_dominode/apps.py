@@ -18,6 +18,10 @@
 #
 #########################################################################
 from django.apps import AppConfig as BaseAppConfig
+import logging
+
+
+logger = logging.getLogger('geonode_dominode')
 
 
 def run_setup_hooks(*args, **kwargs):
@@ -25,6 +29,19 @@ def run_setup_hooks(*args, **kwargs):
     from .celeryapp import app as celeryapp
     if celeryapp not in settings.INSTALLED_APPS:
         settings.INSTALLED_APPS += (celeryapp, )
+
+    # Create new custom permission model
+    from django.contrib.auth.models import ContentType, Permission
+    from geonode.groups.models import GroupProfile
+    group_content_type = ContentType.objects.get_for_model(GroupProfile)
+    execute_sync_layers_perm, created = Permission.objects.get_or_create(
+        codename='can_sync_geoserver',
+        name='Can sync GeoServer',
+        content_type=group_content_type
+    )
+    if created:
+        logger.info('Created new permission: {}'.format(
+            execute_sync_layers_perm))
 
 
 class AppConfig(BaseAppConfig):

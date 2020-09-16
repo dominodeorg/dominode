@@ -165,3 +165,12 @@ if DEBUG:
         "handlers": ["console"], "level": "DEBUG"
     }
     LOGGING['handlers']['console']['level'] = 'DEBUG'
+
+
+BROKER_URL = CELERY_BROKER_URL
+CELERY_TASK_QUEUES += (
+    Queue(
+        'geonode_dominode',
+        GEONODE_EXCHANGE,
+        routing_key='geonode_dominode'),
+)
