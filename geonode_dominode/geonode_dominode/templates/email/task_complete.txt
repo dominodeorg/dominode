@@ -1,3 +1,5 @@
 Hi {{ username }},
 
-Your task: Sync GeoServer has completed.
+Your task, Sync GeoServer has completed with the following output:
+
+{{ output }}

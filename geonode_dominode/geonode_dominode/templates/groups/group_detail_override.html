@@ -59,7 +59,14 @@
       <li class="list-group-item"><a href="{% url "cli_view" object.slug %}">{% trans "Run Management Commands" %}</a></li>
       {% endif %}
       {% if perms.groups.can_sync_geoserver %}
-      <li class="list-group-item"><button type="button" class="btn btn-primary" data-toggle="modal" data-target="#sync-geoserver-modal">{% trans "Sync GeoServer" %}</button></li>
+      <li class="list-group-item">
+        <form action="{% url "cli_sync_geoserver" %}" method=post>
+          {% csrf_token %}
+          <input type="hidden" name="group-slug" value="{{ object.slug }}" />
+          <input type="hidden" name="redirect" value="{{ request.path }}" />
+          <input type="submit" class="btn btn-primary" data-toggle="modal" data-target="#sync-geoserver-modal" value="{% trans "Sync GeoServer" %}" />
+        </form>
+      </li>
       {% endif %}
       <li class="list-group-item">
         <h4>{% trans "Permissions" %}</h4>
@@ -102,50 +109,4 @@
   </div>
   {% include 'search/_pagination.html' %}
 </div>
-<div class="modal fade" id="sync-geoserver-modal" tabindex="-1" role="dialog" aria-labelledby="sync-geoserver-label" aria-hidden="true">
-  <div class="modal-dialog" role="document">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title" style="float: left" id="sync-geoserver-label">{% trans "Sync GeoServer" %}</h5>
-        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-          <span aria-hidden="true">&times;</span>
-        </button>
-      </div>
-      <div class="modal-body">
-        <div class="alert alert-dismissible fade show" role="alert">
-          <div class="alert-text"></div>
-          <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-            <span aria-hidden="true">&times;</span>
-          </button>
-        </div>
-        <form action="{% url "cli_sync_geoserver" %}" method=post>
-          {% csrf_token %}
-          <div class="form-group">
-            <label for="workspace-name" class="col-form-label">{% trans "Workspace Name" %}</label>
-            <input type="text" class="form-control" id="workspace-name" name="workspace-name" value=""/>
-            <input type="hidden" name="redirect" value="{{ request.path }}">
-          </div>
-        </form>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-        <button type="submit" class="btn btn-primary">Run</button>
-      </div>
-    </div>
-  </div>
-</div>
 {% endblock %}
-
-
-{% block extra_script %}
-{{ block.super }}
-<script type="text/javascript">
-  $(document).ready(function(){
-    let $geonode_sync_form = $('#sync-geoserver-modal form');
-    let $geonode_sync_run_button = $('#sync-geoserver-modal button[type=submit]');
-    $geonode_sync_run_button.on('click', function (event){
-      $geonode_sync_form.submit();
-    });
-  });
-</script>
-{% endblock extra_script %}

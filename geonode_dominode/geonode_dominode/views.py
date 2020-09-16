@@ -84,10 +84,12 @@ def cli_sync_geoserver(request):
     :type request: django.http.HttpRequest
     """
     if request.method == 'POST':
-        workspace_name = request.POST.get('workspace-name')
+        group_slug = request.POST.get('group-slug')
+        workspace_name = group_slug.replace('-editor', '')
         redirect = request.POST.get('redirect')
         user = request.user.get_username()
         logger.debug('Receiving GeoServer sync requests.')
+        logger.debug('Group name: {}'.format(group_slug))
         logger.debug('Workspace name: {}'.format(workspace_name))
         logger.debug('User name: {}'.format(user))
         task_cli_sync_geoserver.delay(workspace_name, user)
