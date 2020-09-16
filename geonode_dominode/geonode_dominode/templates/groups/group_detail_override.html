@@ -55,9 +55,6 @@
       {% if can_view %}
       <li class="list-group-item"><a href="{% url "group_activity" object.slug %}">{% trans "Group Activities" %}</a></li>
       {% endif %}
-      {% if perms.geonode_dominode.execute_cli %}
-      <li class="list-group-item"><a href="{% url "cli_view" object.slug %}">{% trans "Run Management Commands" %}</a></li>
-      {% endif %}
       {% if perms.groups.can_sync_geoserver %}
       <li class="list-group-item">
         <form action="{% url "cli_sync_geoserver" %}" method=post>
