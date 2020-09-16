@@ -87,8 +87,9 @@ def cli_sync_geoserver(request):
         workspace_name = request.POST.get('workspace-name')
         redirect = request.POST.get('redirect')
         user = request.user.get_username()
-        logger.info('Workspace name: {}'.format(workspace_name))
-        logger.info('User name: {}'.format(user))
+        logger.debug('Receiving GeoServer sync requests.')
+        logger.debug('Workspace name: {}'.format(workspace_name))
+        logger.debug('User name: {}'.format(user))
         task_cli_sync_geoserver.delay(workspace_name, user)
         messages.success(
             request, _('Sync GeoServer command is executed in the server.'))
