@@ -51,6 +51,7 @@ x-common-django:
     - MEDIA_URL=/uploaded/
     - GEOSERVER_LOCATION=${GEOSERVER_LOCATION:-http://nginx/geoserver/}
     - ASYNC_SIGNALS=True
+    - CELERY_TASK_ALWAYS_EAGER=${CELERY_TASK_ALWAYS_EAGER:-False}
     - SESSION_EXPIRED_CONTROL_ENABLED=False
     # TODO : we should probably remove this and set Celery to use JSON serialization instead of pickle
     - C_FORCE_ROOT=True

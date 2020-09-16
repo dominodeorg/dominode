@@ -7,7 +7,7 @@ x-common-django:
   image: dominode/geonode:django-3.0
   working_dir: /opt/geonode_dominode
   environment:
-    - DEBUG=True
+    DEBUG: 'True'
   volumes:
     - ../../:/opt/geonode_dominode/
     - ./_volume_static:/spcgeonode-static/
