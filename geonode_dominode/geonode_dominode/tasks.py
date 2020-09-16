@@ -14,7 +14,7 @@ logger = get_task_logger(__name__)
 
 
 @app.task(queue='geonode_dominode')
-def task_cli_sync_geoserver(workspace_name, username):
+def task_sync_geoserver(workspace_name, username):
     # construct management command arguments
     out = StringIO()
     User = get_user_model()

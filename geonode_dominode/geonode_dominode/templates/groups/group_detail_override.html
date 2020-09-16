@@ -57,11 +57,11 @@
       {% endif %}
       {% if perms.groups.can_sync_geoserver %}
       <li class="list-group-item">
-        <form action="{% url "cli_sync_geoserver" %}" method=post>
+        <form action="{% url "sync_geoserver" %}" method=post>
           {% csrf_token %}
           <input type="hidden" name="group-slug" value="{{ object.slug }}" />
           <input type="hidden" name="redirect" value="{{ request.path }}" />
-          <input type="submit" class="btn btn-primary" data-toggle="modal" data-target="#sync-geoserver-modal" value="{% trans "Sync GeoServer" %}" />
+          <input type="submit" class="btn btn-primary" value="{% trans "Sync GeoServer" %}" />
         </form>
       </li>
       {% endif %}

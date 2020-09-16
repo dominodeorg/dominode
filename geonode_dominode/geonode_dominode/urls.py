@@ -24,7 +24,7 @@ from django.views.generic import TemplateView
 from geonode.urls import urlpatterns
 from geonode.monitoring import register_url_event
 
-from geonode_dominode.views import GroupDetailView, cli_sync_geoserver
+from geonode_dominode.views import GroupDetailView, sync_geoserver
 
 homepage = register_url_event()(TemplateView.as_view(template_name='site_index.html'))
 
@@ -34,6 +34,6 @@ urlpatterns = [
         name='home'),
     url(r'^groups/group/(?P<slug>[-\w]+)/$',
         GroupDetailView.as_view(), name='group_detail'),
-    url(r'^cli/sync_geoserver/',
-        cli_sync_geoserver, name='cli_sync_geoserver'),
+    url(r'^groups/sync_geoserver/',
+        sync_geoserver, name='sync_geoserver'),
  ] + urlpatterns
