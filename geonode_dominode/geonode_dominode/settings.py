@@ -161,16 +161,21 @@ if LDAP_ENABLED and 'geonode_ldap' not in INSTALLED_APPS:
 # https://docs.geonode.org/en/master/advanced/contrib/#configuration
 
 if DEBUG:
+    LOGGING['loggers']['geonode'] = {
+        "handlers": ["console"], "level": "DEBUG",
+    }
     LOGGING['loggers']['geonode_dominode'] = {
         "handlers": ["console"], "level": "DEBUG"
     }
     LOGGING['handlers']['console']['level'] = 'DEBUG'
 
 
-BROKER_URL = CELERY_BROKER_URL
 CELERY_TASK_QUEUES += (
     Queue(
         'geonode_dominode',
         GEONODE_EXCHANGE,
         routing_key='geonode_dominode'),
 )
+
+CELERY_TASK_DEFAULT_QUEUE = 'default'
+CELERY_TASK_DEFAULT_ROUTING_KEY = 'default'

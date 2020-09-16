@@ -3,7 +3,6 @@ from io import StringIO
 from celery.utils.log import get_task_logger
 from django.conf import settings
 from django.contrib.auth import get_user_model
-from django.core import management
 from django.core.mail import send_mail
 from django.template.loader import render_to_string
 from django.utils.translation import ugettext_lazy as _
@@ -18,11 +17,13 @@ logger = get_task_logger(__name__)
 def task_cli_sync_geoserver(workspace_name, username):
     # construct management command arguments
     out = StringIO()
+    User = get_user_model()
+    user = User.objects.get(username=username)
     try:
         result = gs_slurp(
             ignore_errors=False,
             verbosity=1,
-            owner=username,
+            owner=user,
             console=out,
             workspace=workspace_name,
             store=None,
@@ -45,8 +46,6 @@ def task_cli_sync_geoserver(workspace_name, username):
             error_message = str(e)
 
     # Send email to user
-    User = get_user_model()
-    user = User.objects.get(username=username)
     from_email = settings.DEFAULT_FROM_EMAIL
     to_email = '{} <{}>'.format(username, user.email)
     subject = _('[Task Complete] Sync GeoServer')
