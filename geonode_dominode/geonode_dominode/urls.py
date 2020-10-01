@@ -23,7 +23,7 @@ from django.urls import (
     path,
 )
 from django.conf.urls import url
-from django.views.generic import TemplateView
+from django.views.generic import TemplateView, RedirectView
 
 from geonode.urls import urlpatterns
 from geonode.monitoring import register_url_event
@@ -43,4 +43,5 @@ urlpatterns = [
     ),
     url(r'^groups/sync_geoserver/', sync_geoserver, name='sync_geoserver'),
     path('dominode-validation/', include(dominode_validation_urls)),
+    url(r'^layers/upload$', RedirectView.as_view(url='/')),
  ] + urlpatterns
