@@ -44,4 +44,7 @@ urlpatterns = [
     url(r'^groups/sync_geoserver/', sync_geoserver, name='sync_geoserver'),
     path('dominode-validation/', include(dominode_validation_urls)),
     url(r'^layers/upload$', RedirectView.as_view(url='/')),
+    url(r'^layers/(?P<layername>[^/]*)/replace$',
+        RedirectView.as_view(url='/')),
+
  ] + urlpatterns
