@@ -74,6 +74,7 @@ WSGI_APPLICATION = "{}.wsgi.application".format(PROJECT_NAME)
 LANGUAGE_CODE = os.getenv('LANGUAGE_CODE', "en")
 
 INSTALLED_APPS += (
+    'dominode_pygeoapi.apps.DominodePygeoapiConfig',
     'dominode_validation.apps.DominodeValidationConfig',
     'geonode_dominode.apps.AppConfig',
     'rest_framework',
@@ -168,6 +169,10 @@ LOGGING = {
             "handlers": ["console"], "level": "DEBUG", },
         "geonode_logstash.logstash": {
             "handlers": ["console"], "level": "DEBUG", },
+        "pygeoapi": {
+            "handlers": ["console"],
+            "level": "DEBUG",
+        },
     },
 }
 
@@ -206,3 +211,92 @@ CELERY_TASK_QUEUES += (
 
 CELERY_TASK_DEFAULT_QUEUE = 'default'
 CELERY_TASK_DEFAULT_ROUTING_KEY = 'default'
+
+PYGEOAPI_CONFIG = {
+    'server': {
+        # 'bind': {
+        #     'host': '0.0.0.0',
+        #     'port': 5000,
+        # },
+        'url': 'http://dominode.test/dominode-pygeoapi/',
+        'mimetype': '',
+        'encoding': '',
+        'language': '',
+        'cors': False,
+        'pretty_print': True,
+        'limit': 10,
+        'map': {
+            'url': '',
+            'attribution': '',
+        },
+        'ogc_schemas_location': '',
+    },
+    'logging': {
+        'level': LOGGING['loggers']['pygeoapi']['level'],
+    },
+    'metadata': {
+        'identification': {
+            'title': 'DomiNode pygeoapi',
+            'description': 'DomiNode\'s pygeoapi integration endpoints' ,
+            'keywords': [
+                'stac',
+            ],
+            'keywords_type': 'theme',
+            'terms_of_service': '',
+            'url': '',
+        },
+        'license': {
+            'name': '',
+            'url': '',
+        },
+        'provider': {
+            'name': 'Government of the Commonwealth of Dominica',
+            'url': 'https://dominica.gov.dm',
+        },
+        'contact': {
+            'name': 'Charles Louis',
+            'position': '',
+            'address': '',
+            'city': '',
+            'stateorprovince': '',
+            'postalcode': '',
+            'country': '',
+            'phone': '',
+            'fax': '',
+            'email': '',
+            'url': '',
+            'hours': '',
+            'instructions': '',
+            'role': 'pointOfContact',
+        },
+    },
+    'resources': {
+        'internal-rasters': {
+            'type': 'stac-collection',
+            'title': 'Internal DomiNode raster datasets',
+            'description': '',
+            'keywords': [],
+            'context': {},
+            'links': {},
+            'extents': {
+                'spatial': {
+                    'bbox': [-180, -90, 180, 90],
+                    'crs': 'http://www.opengis.net/def/crs/OGC/1.3/CRS84',
+                },
+                'temporal': {
+                    'begin': '2019-01-01T00:00:00Z',
+                    'end': '2029-01-01T00:00:00Z',
+                },
+            },
+            'provider': {
+                'type': 'stac',
+                'default': True,
+                'name': 'FileSystem',
+                'data': '/data',
+                'file_types': [
+                    '.tif',
+                ]
+            }
+        }
+    },
+}
