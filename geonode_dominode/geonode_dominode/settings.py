@@ -75,6 +75,7 @@ LANGUAGE_CODE = os.getenv('LANGUAGE_CODE', "en")
 
 INSTALLED_APPS += (
     'dominode_validation.apps.DominodeValidationConfig',
+    'dominode_topomaps.apps.DominodeTopomapsConfig',
     'geonode_dominode.apps.AppConfig',
     'rest_framework',
     # 'django_filters',
@@ -206,3 +207,6 @@ CELERY_TASK_QUEUES += (
 
 CELERY_TASK_DEFAULT_QUEUE = 'default'
 CELERY_TASK_DEFAULT_ROUTING_KEY = 'default'
+
+DOMINODE_PUBLISHED_TOPOMAP_INDEX_SHEET_SEARCH_PATTERN = (
+    'lsd_published-topomap-')

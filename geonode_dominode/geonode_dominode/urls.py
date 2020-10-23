@@ -9,6 +9,7 @@ from geonode.urls import urlpatterns
 from geonode.monitoring import register_url_event
 
 from dominode_validation import urls as dominode_validation_urls
+from dominode_topomaps import urls as dominode_topomaps_urls
 
 from .views import (
     GroupDetailView,
@@ -31,6 +32,7 @@ urlpatterns = [
         name='sync_geoserver'
     ),
     path('dominode-validation/', include(dominode_validation_urls)),
+    path('dominode-topomaps/', include(dominode_topomaps_urls)),
     url(r'^layers/upload$', RedirectView.as_view(url='/')),
     url(r'^layers/(?P<layername>[^/]*)/replace$',
         RedirectView.as_view(url='/')),
