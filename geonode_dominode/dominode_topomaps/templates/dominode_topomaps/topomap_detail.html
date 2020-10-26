@@ -3,35 +3,42 @@
 
 {% block body_outer %}
     <div class="page-header">
-        <a href="{% url 'topomap-list' %}" class="btn btn-primary pull-right">{% trans "Back to topomaps list" %}</a>
-        <h2 class="page-title">{{ topomap.name }} <small>Published topomap series</small></h2>
+        <a href="{% url 'topomap-sheets-list' sheet.version sheet.scale %}" class="btn btn-primary pull-right">{% trans "Back to topomaps sheets list" %}</a>
+        <h2 class="page-title">{% trans "Published topomap sheet" %}</h2>
+        <ol class="breadcrumb">
+            <li><a href="{% url 'topomap-list' %}">{% trans "Topomaps" %}</a> </li>
+            <li><a href="{% url 'topomap-sheets-list' sheet.version sheet.scale %}">{{ sheet.title }}</a></li>
+            <li class="active">{{ sheet.sheet }}</li>
+        </ol>
     </div>
-    <div class="list-group">
-        <a class="list-group-item {% if resource.is_valid %}list-group-item-success{% else %}list-group-item-danger{% endif %}"><strong>{% trans "Valid" %}:</strong> {{ resource.is_valid }}</a>
-        <a class="list-group-item"><strong>{% trans "Artifact Type" %}:</strong> {{ resource.artifact_type|capfirst }}</a>
-        <a class="list-group-item"><strong>{% trans "Resource Type" %}:</strong> {{ resource.resource_type|capfirst }}</a>
+    <div>
+    {% blocktrans %}
+        Available paper sizes
+    {% endblocktrans %}
     </div>
-    <div class="panel panel-default">
-        <div class="panel-heading">
-            <h3 class="panel-title">Latest Validation Report</h3>
-        </div>
-        <div class="panel-body">
-            {% include "./_validation_report.html" with report=latest_report only %}
-        </div>
-    </div>
-    {% if other_recent_reports|length > 0 %}
-        <div class="panel panel-default">
-            <div class="panel-heading clearfix">
-                {% if show_all_reports %}
-                    <a  class="btn btn-default pull-right" href="{%  url 'validation-report-list' resource.pk %}">{% trans "See all reports" %}</a>
-                {% endif %}
-                <h3 class="panel-title">{% trans "Other recent validation reports" %}</h3>
-            </div>
-            <div class="list-group">
-                {% for report in other_recent_reports %}
-                    <a class="list-group-item" href="{% url 'validation-report-detail' report.pk %}">{{ report.created }} - {{ report.validator }}</a>
-                {% endfor %}
-            </div>
+    {% if not sheet.allow_download %}
+        <div class="alert alert-danger">
+        {% blocktrans %}
+            You have no permission to download
+        {% endblocktrans %}
         </div>
     {% endif %}
+    <div class="list-group">
+        {% for size in sheet.paper_sizes %}
+            <li class="list-group-item {% if not sheet.allow_download %}disabled{% endif %}">
+                <div class="container-fluid">
+                    <span>{{ size|upper }}</span>
+                    <span class="pull-right">
+                        <a href="{% url 'topomap-sheet-download' sheet.version sheet.scale sheet.sheet size %}" class="btn btn-primary {% if not sheet.allow_download %}disabled{% endif %}">{% trans "Download" %}</a>
+                    </span>
+                </div>
+            </li>
+        {% empty %}
+            <div>
+                {% blocktrans %}
+                    There are no sheets published yet
+                {% endblocktrans %}
+            </div>
+        {% endfor %}
+    </div>
 {% endblock %}

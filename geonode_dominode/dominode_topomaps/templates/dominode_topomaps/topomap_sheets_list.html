@@ -1,0 +1,42 @@
+{% extends "geonode_base.html" %}
+{% load i18n %}
+
+{% block body_outer %}
+    <div class="page-header">
+        <a href="{% url 'topomap-list' %}" class="btn btn-primary pull-right">{% trans "Back to topomaps list" %}</a>
+        <h2 class="page-title">{% trans "Sheets list of topomaps" %}</h2>
+        <ol class="breadcrumb">
+            <li><a href="{% url 'topomap-list' %}">{% trans "Topomaps" %}</a> </li>
+            <li class="active">{{ layer.title }}</li>
+        </ol>
+    </div>
+    <div>
+    {% blocktrans %}
+        Available sheets
+    {% endblocktrans %}
+    </div>
+    {% if sheets %}
+        <div class="list-group">
+            {% for sheet in sheets %}
+                {% if sheet.paper_sizes %}
+                <a href="{% url 'topomap-sheet' version scale sheet.index %}" class="list-group-item">
+                    {{ sheet.index }}
+                    {% if sheet.paper_sizes %}
+                    <span class="pull-right">
+                        {% for size in sheet.paper_sizes %}
+{#                            <a href="{% url 'topomap-sheet-download' version scale sheet.index size %}" class="btn btn-default">{{ size|upper }}</a>#}
+                        {% endfor %}
+                    </span>
+                    {% endif %}
+                </a>
+                {% endif %}
+            {% endfor %}
+        </div>
+    {% else %}
+        <div>
+            {% blocktrans %}
+                There are no sheets published yet
+            {% endblocktrans %}
+        </div>
+    {% endif %}
+{% endblock %}

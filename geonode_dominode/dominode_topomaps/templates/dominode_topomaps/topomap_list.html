@@ -5,16 +5,16 @@
     <div class="page-header">
         <h2 class="page-title">{% trans "DomiNode published topomaps" %}</h2>
     </div>
+    <div>
+    {% blocktrans %}
+        Available topomap layers
+    {% endblocktrans %}
+    </div>
     {% if topomaps %}
         <div class="list-group">
             {% for topomap in topomaps %}
-                <a href="{% url 'topomap-detail' topomap.pk %}" class="list-group-item">
-                    {{ topomap.name }}
-                    <span class="pull-right">
-                        <span class="label label-default">{{ resource.resource_type }}</span>
-                        <span class="label label-default">{{ resource.artifact_type }}</span>
-                        <span class="label {% if resource.is_valid %}label-success{% else %}label-danger{% endif %}">{% if resource.is_valid %}Valid{% else %}Invalid{% endif %}</span>
-                    </span>
+                <a href="{% url 'topomap-sheets-list' topomap.version topomap.scale %}" class="list-group-item">
+                    {{ topomap.layer.title }}
                 </a>
             {% endfor %}
         </div>
