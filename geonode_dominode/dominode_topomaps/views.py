@@ -10,6 +10,7 @@ from django.views import generic
 
 from geonode.layers.models import Layer
 from geonode.people.models import Profile
+from rest_framework.exceptions import NotFound
 
 from dominode_topomaps.constants import TOPOMAP_DOWNLOAD_PERM_CODE
 
@@ -82,6 +83,12 @@ class TopomapSheetsListView(LoginRequiredMixin, generic.ListView):
                 info = {
                     'index': feature.get('index') or feature.get('Index')
                 }
+                # parse index into letter and number
+                parsed_index = info['index'].split('-')
+                letter = parsed_index[0]
+                number = int(parsed_index[1])
+                info['index_letter'] = letter
+                info['index_number'] = number
                 # check that the file exists
                 dirpath = settings.DOMINODE_PUBLISHED_TOPOMAP_INDEX_SHEET_DIRPATH_PATTERN.format(
                     version=version,
@@ -105,10 +112,13 @@ class TopomapSheetsListView(LoginRequiredMixin, generic.ListView):
                 # TODO: what to do if failed to retrieve index
                 info = {}
             sheet_info.append(info)
+        sheet_info = sorted(sheet_info, key=lambda o: (o['index_letter'], o['index_number']))
         context['scale'] = scale
         context['version'] = version
         context['sheets'] = sheet_info
         context['layer'] = layer
+        context['allow_download'] = self.request.user.has_perm(
+            f'layers.{TOPOMAP_DOWNLOAD_PERM_CODE}')
         return context
 
 
@@ -158,7 +168,8 @@ class TopomapSheetDetailView(LoginRequiredMixin, generic.DetailView):
             'version': version,
             'scale': scale,
             'sheet': sheet,
-            'allow_download': user.has_perm(TOPOMAP_DOWNLOAD_PERM_CODE)
+            'allow_download': user.has_perm(
+                f'layers.{TOPOMAP_DOWNLOAD_PERM_CODE}')
         }
 
     def get(self, request, *args, **kwargs):
@@ -185,10 +196,11 @@ class TopomapSheetDetailView(LoginRequiredMixin, generic.DetailView):
                 sheet=sheet,
             )
             fullpath_pdf = os.path.join(dirpath, filename)
-            return FileResponse(
-                open(fullpath_pdf, 'rb'),
-                as_attachment=True,
-                filename=filename
-            )
-
-
+            try:
+                return FileResponse(
+                    open(fullpath_pdf, 'rb'),
+                    as_attachment=True,
+                    filename=filename
+                )
+            except FileNotFoundError:
+                raise NotFound()
