@@ -5,11 +5,6 @@
     <div class="page-header">
         <a href="{% url 'topomap-sheets-list' sheet.version sheet.scale %}" class="btn btn-primary pull-right">{% trans "Back to topomaps sheets list" %}</a>
         <h2 class="page-title">{% trans "Published topomap sheet" %}</h2>
-        <ol class="breadcrumb">
-            <li><a href="{% url 'topomap-list' %}">{% trans "Topomaps" %}</a> </li>
-            <li><a href="{% url 'topomap-sheets-list' sheet.version sheet.scale %}">{{ sheet.title }}</a></li>
-            <li class="active">{{ sheet.sheet }}</li>
-        </ol>
     </div>
     <div>
     {% blocktrans %}
