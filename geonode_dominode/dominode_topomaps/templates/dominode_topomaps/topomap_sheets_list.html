@@ -21,7 +21,7 @@
                     <span class="pull-right">
                         {% for size in sheet.paper_sizes %}
                             {% if allow_download %}
-                                <a href="{% url 'topomap-sheet-download' version scale sheet.index size %}" class="label label-default">{{ size|upper }}</a>
+                                <a href="{% url 'topomap-sheet-download' version scale sheet.index size %}" class="label label-primary">{{ size|upper }}</a>
                             {% else %}
                                 <label class="label label-warning">{{ size|upper }}</label>
                             {% endif %}

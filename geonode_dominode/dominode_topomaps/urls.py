@@ -24,8 +24,7 @@ urlpatterns = [
     ),
     path(
         'v<str:version>/series-<int:scale>/<str:sheet>/<str:paper_size>/download',
-        permission_required_or_403(f'layers.{TOPOMAP_DOWNLOAD_PERM_CODE}')(
-            views.TopomapSheetDetailView.as_view()),
+        views.TopomapSheetDetailView.as_view(),
         name='topomap-sheet-download',
         kwargs={
             'download': True

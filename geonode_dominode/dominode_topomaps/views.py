@@ -5,12 +5,11 @@ from urllib.parse import urlparse
 from django.conf import settings
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.gis.gdal import DataSource
-from django.http import FileResponse
+from django.core.exceptions import PermissionDenied
+from django.http import FileResponse, Http404
 from django.views import generic
-
 from geonode.layers.models import Layer
 from geonode.people.models import Profile
-from rest_framework.exceptions import NotFound
 
 from dominode_topomaps.constants import TOPOMAP_DOWNLOAD_PERM_CODE
 
@@ -118,7 +117,7 @@ class TopomapSheetsListView(LoginRequiredMixin, generic.ListView):
         context['sheets'] = sheet_info
         context['layer'] = layer
         context['allow_download'] = self.request.user.has_perm(
-            f'layers.{TOPOMAP_DOWNLOAD_PERM_CODE}')
+            f'layers.{TOPOMAP_DOWNLOAD_PERM_CODE}', obj=layer)
         return context
 
 
@@ -163,22 +162,25 @@ class TopomapSheetDetailView(LoginRequiredMixin, generic.DetailView):
         user: Profile = self.request.user
         # Our object is the paper size details
         return {
+            'layer': layer,
             'title': layer.title,
             'paper_sizes': paper_sizes,
             'version': version,
             'scale': scale,
             'sheet': sheet,
             'allow_download': user.has_perm(
-                f'layers.{TOPOMAP_DOWNLOAD_PERM_CODE}')
+                f'layers.{TOPOMAP_DOWNLOAD_PERM_CODE}', obj=layer)
         }
 
     def get(self, request, *args, **kwargs):
         is_download = kwargs.get('download')
+        self.object = self.get_object()
         if not is_download:
-            self.object = self.get_object()
             context = self.get_context_data(object=self.object)
             return self.render_to_response(context)
         else:
+            if not self.object['allow_download']:
+                raise PermissionDenied()
             version = self.kwargs.get('version')
             scale = self.kwargs.get('scale')
             sheet = self.kwargs.get('sheet')
@@ -203,4 +205,4 @@ class TopomapSheetDetailView(LoginRequiredMixin, generic.DetailView):
                     filename=filename
                 )
             except FileNotFoundError:
-                raise NotFound()
+                raise Http404()
