@@ -5,6 +5,7 @@
     <div class="page-header">
         <a href="{% url 'topomap-list' %}" class="btn btn-primary pull-right">{% trans "Back to topomaps list" %}</a>
         <h2 class="page-title">{% trans "Sheets list of topomaps" %}</h2>
+        <h3 class="page-title">{{ layer.title }}</h3>
     </div>
     <div>
     {% blocktrans %}
