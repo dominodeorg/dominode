@@ -7,14 +7,14 @@
     </div>
     <div>
     {% blocktrans %}
-        Available topomap layers
     {% endblocktrans %}
     </div>
     {% if topomaps %}
+        <p>{% trans "Available topomap layers:" %}</p>
         <div class="list-group">
             {% for topomap in topomaps %}
-                <a href="{% url 'topomap-sheets-list' topomap.version topomap.scale %}" class="list-group-item">
-                    {{ topomap.layer.title }}
+                <a href="{% url 'topomap-detail' topomap.version topomap.series %}" class="list-group-item">
+                    {{ topomap.title }}
                 </a>
             {% endfor %}
         </div>

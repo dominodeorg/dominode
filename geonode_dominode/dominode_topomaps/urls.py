@@ -1,10 +1,6 @@
-from django.urls import (
-    path,
-)
-from guardian.decorators import permission_required_or_403
+from django.urls import path
 
 from . import views
-from .constants import TOPOMAP_DOWNLOAD_PERM_CODE
 
 urlpatterns = [
     path(
@@ -13,21 +9,18 @@ urlpatterns = [
         name='topomap-list'
     ),
     path(
-        'v<str:version>/series-<int:scale>/',
-        views.TopomapSheetsListView.as_view(),
-        name='topomap-sheets-list'
+        'v<str:version>/series-<int:series>/',
+        views.TopomapDetailView.as_view(),
+        name='topomap-detail'
     ),
     path(
-        'v<str:version>/series-<int:scale>/<str:sheet>/',
-        views.TopomapSheetDetailView.as_view(),
-        name='topomap-sheet'
-    ),
-    path(
-        'v<str:version>/series-<int:scale>/<str:sheet>/<str:paper_size>/download',
-        views.TopomapSheetDetailView.as_view(),
+        'v<str:version>/series-<int:series>/<str:sheet>/',
+        views.SheetDetailView.as_view(),
         name='topomap-sheet-download',
-        kwargs={
-            'download': True
-        }
+    ),
+    path(
+        'v<str:version>/series-<int:series>/<str:sheet>/<str:paper_size>/',
+        views.TopomapSheetDownloadView.as_view(),
+        name='topomap-sheet-download',
     ),
 ]

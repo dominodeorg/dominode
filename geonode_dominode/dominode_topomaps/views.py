@@ -1,208 +1,153 @@
-import os
-import re
-from urllib.parse import urlparse
+import logging
 
 from django.conf import settings
+from django.contrib.auth import get_user_model
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.contrib.gis.gdal import DataSource
-from django.core.exceptions import PermissionDenied
-from django.http import FileResponse, Http404
-from django.views import generic
-from geonode.layers.models import Layer
-from geonode.people.models import Profile
+from django.http import (
+    FileResponse,
+    Http404,
+    HttpRequest,
+)
+from django.views import (
+    generic,
+    View
+)
+from django.shortcuts import get_object_or_404
+from geonode.base.auth import get_or_create_token
 
-from dominode_topomaps.constants import TOPOMAP_DOWNLOAD_PERM_CODE
+from .models import PublishedTopoMapIndexSheetLayer
+from . import utils
+
+logger = logging.getLogger(__name__)
 
 
-class TopomapListView(LoginRequiredMixin, generic.ListView):
-    queryset = Layer.objects.filter(
-        title__contains=(
-            settings.DOMINODE_PUBLISHED_TOPOMAP_INDEX_SHEET_SEARCH_PATTERN)
-    )
-    template_name = 'dominode_topomaps/topomap_list.html'
+class TopoMapLayerMixin:
+
+    def get_object(self, queryset=None):
+        queryset = queryset if queryset is not None else self.get_queryset()
+        version = self.kwargs.get('version')
+        series = self.kwargs.get('series')
+        if version is None or series is None:
+            raise AttributeError(
+                f'Generic detail view {self.__class__.__name__} must be '
+                f'called with a suitable version and series parameters in the '
+                f'URLconf'
+            )
+        queryset = queryset.filter(
+            name__contains=version).filter(name__contains=series)
+        return get_object_or_404(queryset)
+
+
+class TopomapListView(generic.ListView):
+    queryset = PublishedTopoMapIndexSheetLayer.objects.all()
+    template_name = 'dominode_topomaps/topomap-list.html'
     context_object_name = 'topomaps'
     paginate_by = 20
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        # For each returned layer we need to provide also a version
-        # and series value, in order to be able to build urls
-        layers = context['object_list']
-        topomaps_info = []
-        pattern = r'lsd_published-topomap-series-1-(?P<scale>\d+)_v(?P<version>[\d\.]+)'
-        for l in layers:
-            match = re.match(pattern, l.title)
-            try:
-                info = {
-                    'scale': int(match.group('scale')),
-                    'version': match.group('version'),
-                    'layer': l
-                }
-            except:
-                # TODO: What to do if it doesn't match? Just skips?
-                #  It happens when it uses the same prefix, but malformed
-                #  scale/version value.
-                info = {}
-            topomaps_info.append(info)
 
-        context['topomaps'] = topomaps_info
-        return context
-
-
-class TopomapSheetsListView(LoginRequiredMixin, generic.ListView):
-    model = Layer
-    template_name = 'dominode_topomaps/topomap_sheets_list.html'
-    context_object_name = 'sheets'
-    
-    def get_queryset(self):
-        version = self.kwargs.get('version')
-        scale = self.kwargs.get('scale')
-        prefix = settings.DOMINODE_PUBLISHED_TOPOMAP_INDEX_SHEET_SEARCH_PATTERN
-        # must be an exact match
-        return self.model.objects.filter(
-            title=f'{prefix}-1-{scale}_v{version}')
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        # Get possible index from the feature lists
-        layer: Layer = context['object_list'].first()
-        wfs_link = layer.link_set.filter(name='GeoJSON').first()
-        # replace into internal URL for local environment
-        # public geoserver name
-        internal_geoserver_base_url = urlparse(settings.GEOSERVER_LOCATION).netloc
-        wfs_base_url = urlparse(wfs_link.url).netloc
-        ds = DataSource(wfs_link.url.replace(
-            wfs_base_url, internal_geoserver_base_url))
-        wfs_layer = ds[0]
-        sheet_info = []
-        version = self.kwargs.get('version')
-        scale = self.kwargs.get('scale')
-        for feature in wfs_layer:
-            try:
-                info = {
-                    'index': feature.get('index') or feature.get('Index')
-                }
-                # parse index into letter and number
-                parsed_index = info['index'].split('-')
-                letter = parsed_index[0]
-                number = int(parsed_index[1])
-                info['index_letter'] = letter
-                info['index_number'] = number
-                # check that the file exists
-                dirpath = settings.DOMINODE_PUBLISHED_TOPOMAP_INDEX_SHEET_DIRPATH_PATTERN.format(
-                    version=version,
-                    scale=scale,
-                    sheet=info['index']
-                )
-                file_pattern = settings.DOMINODE_PUBLISHED_TOPOMAP_INDEX_FILE_PATTERN.format(
-                    version=version,
-                    scale=scale,
-                    sheet=info['index']
-                )
-                paper_sizes = []
-                for root, dirs, files in os.walk(dirpath):
-                    for f in files:
-                        match = re.match(file_pattern, f)
-                        if match:
-                            size = match.group('paper_size')
-                            paper_sizes.append(size)
-                info['paper_sizes'] = paper_sizes
-            except:
-                # TODO: what to do if failed to retrieve index
-                info = {}
-            sheet_info.append(info)
-        sheet_info = sorted(sheet_info, key=lambda o: (o['index_letter'], o['index_number']))
-        context['scale'] = scale
-        context['version'] = version
-        context['sheets'] = sheet_info
-        context['layer'] = layer
-        context['allow_download'] = self.request.user.has_perm(
-            f'layers.{TOPOMAP_DOWNLOAD_PERM_CODE}', obj=layer)
-        return context
-
-
-class TopomapSheetDetailView(LoginRequiredMixin, generic.DetailView):
-    model = Layer
-    context_object_name = 'sheet'
-    template_name = 'dominode_topomaps/topomap_detail.html'
-
-    def get_queryset(self):
-        version = self.kwargs.get('version')
-        scale = self.kwargs.get('scale')
-        prefix = \
-            settings.DOMINODE_PUBLISHED_TOPOMAP_INDEX_SHEET_SEARCH_PATTERN
-        # must be an exact match
-        return self.model.objects.filter(
-            title=f'{prefix}-1-{scale}_v{version}')
+class TopomapDetailView(generic.DetailView):
+    model = PublishedTopoMapIndexSheetLayer
+    template_name = 'dominode_topomaps/topomap-detail.html'
+    context_object_name = 'topomap'
 
     def get_object(self, queryset=None):
-        layer = self.get_queryset().first()
+        queryset = queryset if queryset is not None else self.get_queryset()
         version = self.kwargs.get('version')
-        scale = self.kwargs.get('scale')
-        sheet = self.kwargs.get('sheet')
-        # check that the file exists
-        dirpath = settings.DOMINODE_PUBLISHED_TOPOMAP_INDEX_SHEET_DIRPATH_PATTERN.format(
-            version=version,
-            scale=scale,
-            sheet=sheet
-        )
-        file_pattern = settings.DOMINODE_PUBLISHED_TOPOMAP_INDEX_FILE_PATTERN.format(
-            version=version,
-            scale=scale,
-            sheet=sheet
-        )
-        paper_sizes = []
-        for root, dirs, files in os.walk(dirpath):
-            for f in files:
-                match = re.match(file_pattern, f)
-                if match:
-                    size = match.group('paper_size')
-                    paper_sizes.append(size)
-        # Check if user can download
-        user: Profile = self.request.user
-        # Our object is the paper size details
-        return {
-            'layer': layer,
-            'title': layer.title,
-            'paper_sizes': paper_sizes,
-            'version': version,
-            'scale': scale,
-            'sheet': sheet,
-            'allow_download': user.has_perm(
-                f'layers.{TOPOMAP_DOWNLOAD_PERM_CODE}', obj=layer)
-        }
+        series = self.kwargs.get('series')
+        if version is None or series is None:
+            raise AttributeError(
+                f'Generic detail view {self.__class__.__name__} must be '
+                f'called with a suitable version and series parameters in the '
+                f'URLconf'
+            )
+        queryset = queryset.filter(
+            name__contains=version).filter(name__contains=series)
+        return get_object_or_404(queryset)
 
-    def get(self, request, *args, **kwargs):
-        is_download = kwargs.get('download')
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        self.object: PublishedTopoMapIndexSheetLayer
+        geoserver_admin_user = get_user_model().objects.get(
+            username=settings.OGC_SERVER_DEFAULT_USER)
+        access_token = get_or_create_token(geoserver_admin_user)
+        published_sheets = self.object.get_published_sheets(
+            use_public_wfs_url=False, geoserver_access_token=access_token)
+        sheets_info = []
+        for sheet_index in published_sheets:
+            sheet_paths = utils.find_sheet(
+                self.object.series, self.object.version, sheet_index)
+            if sheet_paths is not None:
+                sheets_info.append({
+                    'index': sheet_index,
+                    'paper_sizes': sheet_paths.keys()
+                })
+        sheets_info = sorted(sheets_info, key=lambda x: x['index'])
+        context['sheets'] = sheets_info
+        context['allow_download'] = self.request.user.has_perm(
+            'download_resourcebase', self.object.resourcebase_ptr)
+        return context
+
+
+class SheetDetailView(TopoMapLayerMixin, generic.DetailView):
+    model = PublishedTopoMapIndexSheetLayer
+    template_name = 'dominode_topomaps/topomap-sheet-detail.html'
+    context_object_name = 'layer'
+
+    def get(
+            self,
+            request: HttpRequest,
+            sheet: str,
+            *args,
+            **kwargs
+    ):
         self.object = self.get_object()
-        if not is_download:
-            context = self.get_context_data(object=self.object)
-            return self.render_to_response(context)
+        can_download = self.request.user.has_perm(
+            'download_resourcebase', self.object.resourcebase_ptr)
+
+        if not can_download:
+            raise Http404()
+
+        sheet_paths = utils.find_sheet(
+            self.object.series, self.object.version, sheet) or {}
+
+        context = self.get_context_data(
+            object=self.object,
+            sheet=sheet,
+            paper_sizes=sheet_paths.keys(),
+            can_download=can_download
+        )
+        return self.render_to_response(context)
+
+
+class TopomapSheetDownloadView(LoginRequiredMixin, View):
+    http_method_names = ['get']
+
+    def get(
+            self,
+            request: HttpRequest,
+            version: str,
+            series: int,
+            sheet: str,
+            paper_size: str,
+            *args,
+            **kwargs
+    ):
+        queryset = PublishedTopoMapIndexSheetLayer.objects.filter(
+            name__contains=version).filter(name__contains=series)
+        topomap_layer = get_object_or_404(queryset)
+        logger.debug(f'topomap_layer: {topomap_layer}')
+        can_download = self.request.user.has_perm(
+            'download_resourcebase', topomap_layer.resourcebase_ptr)
+        if not can_download:
+            raise Http404()
         else:
-            if not self.object['allow_download']:
-                raise PermissionDenied()
-            version = self.kwargs.get('version')
-            scale = self.kwargs.get('scale')
-            sheet = self.kwargs.get('sheet')
-            paper_size = self.kwargs.get('paper_size')
-            # download the file
-            filename = settings.DOMINODE_PUBLISHED_TOPOMAP_INDEX_FILE_FORMAT.format(
-                version=version,
-                scale=scale,
-                sheet=sheet,
-                paper_size=paper_size
-            )
-            dirpath = settings.DOMINODE_PUBLISHED_TOPOMAP_INDEX_SHEET_DIRPATH_PATTERN.format(
-                version=version,
-                scale=scale,
-                sheet=sheet,
-            )
-            fullpath_pdf = os.path.join(dirpath, filename)
-            try:
+            available_sheet_paths = utils.find_sheet(series, version, sheet) or {}
+            sheet_path = available_sheet_paths.get(paper_size)
+            if sheet_path is not None:
                 return FileResponse(
-                    open(fullpath_pdf, 'rb'),
+                    open(sheet_path, 'rb'),
                     as_attachment=True,
-                    filename=filename
+                    filename=sheet_path.name
                 )
-            except FileNotFoundError:
+            else:
                 raise Http404()

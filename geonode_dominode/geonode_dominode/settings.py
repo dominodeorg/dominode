@@ -195,6 +195,9 @@ if DEBUG:
     LOGGING['loggers']['geonode_dominode'] = {
         "handlers": ["console"], "level": "DEBUG"
     }
+    LOGGING['loggers']['dominode_topomaps'] = {
+        "handlers": ["console"], "level": "DEBUG"
+    }
     LOGGING['handlers']['console']['level'] = 'DEBUG'
 
 
@@ -208,17 +211,10 @@ CELERY_TASK_QUEUES += (
 CELERY_TASK_DEFAULT_QUEUE = 'default'
 CELERY_TASK_DEFAULT_ROUTING_KEY = 'default'
 
-DOMINODE_PUBLISHED_TOPOMAP_INDEX_SHEET_SEARCH_PATTERN = (
-    'lsd_published-topomap-series')
-
-DOMINODE_PUBLISHED_TOPOMAP_INDEX_SHEET_DIRPATH_PATTERN = (
-    '/topomaps/lsd-topomaps/v{version}/series-{scale}/{sheet}/'
-)
-
-DOMINODE_PUBLISHED_TOPOMAP_INDEX_FILE_PATTERN = (
-    r'dominica_topomap-{scale}-(?P<paper_size>.*)-{sheet}_v{version}.pdf'
-)
-
-DOMINODE_PUBLISHED_TOPOMAP_INDEX_FILE_FORMAT = (
-    'dominica_topomap-{scale}-{paper_size}-{sheet}_v{version}.pdf'
-)
+DOMINODE_PUBLISHED_TOPOMAPS = {
+    'index_pattern': 'lsd_published-topomap-series',
+    'sheet_path_pattern': (
+        '/topomaps/v{version}/series-{series}/dominica_topomap-{series}-'
+        '(?P<paper_size>\w+)-{sheet}_v{version}.pdf'
+    ),
+}
