@@ -3,16 +3,24 @@
 
 {% block body_outer %}
     <div class="page-header">
-        <a href="{% url 'topomap-detail' layer.version layer.series %}" class="btn btn-primary pull-right">{% trans "Back to topomaps sheets list" %}</a>
-        <h2 class="page-title">{% trans "Topomap sheet" %}</h2>
+        <a href="{% url 'layer_detail' layer.alternate %}" class="btn btn-primary pull-right">{% trans "Back to layer details" %}</a>
+        <h2 class="page-title">{% blocktrans %}Sheet {{ sheet }}{% endblocktrans %}</h2>
+        <h4 class="subtitle">{% blocktrans with title=layer.title %}Topomap {{ title }}{% endblocktrans %}</h4>
     </div>
     <p>{% trans "Available paper sizes:" %}</p>
-    {% if not can_download %}
+    {% if user.is_anonymous %}
         <div class="alert alert-warning">
-        {% blocktrans %}
-            You have no permission to download this sheet
-        {% endblocktrans %}
+            <p>{% trans "Topomap sheets can only be downloaded by logged in users that have been granted the relevant download permissions" %}</p>
+            <p>{%  trans "Register a user in the platform, then login and finally request access" %}</p>
         </div>
+    {% else %}
+        {% if not can_download %}
+            <div class="alert alert-warning">
+                {% blocktrans %}
+                    You have no permission to download this sheet.
+                {% endblocktrans %}
+            </div>
+        {% endif %}
     {% endif %}
     <div class="list-group">
         {% for size in paper_sizes %}
@@ -20,7 +28,7 @@
                 <div class="container-fluid">
                     <span>{{ size|upper }}</span>
                     <span class="pull-right">
-                        <a href="{% url 'topomap-sheet-download' layer.version layer.series sheet size %}" class="btn btn-primary {% if not can_download %}disabled{% endif %}">{% trans "Download" %}</a>
+                        <a href="{% url 'sheet-download' layer.version layer.series sheet size %}" class="btn btn-primary {% if not can_download %}disabled{% endif %}"><i class="fa fa-download"></i>{% trans "Download sheet" %}</a>
                     </span>
                 </div>
             </li>

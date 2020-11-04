@@ -9,18 +9,13 @@ urlpatterns = [
         name='topomap-list'
     ),
     path(
-        'v<str:version>/series-<int:series>/',
-        views.TopomapDetailView.as_view(),
-        name='topomap-detail'
-    ),
-    path(
         'v<str:version>/series-<int:series>/<str:sheet>/',
         views.SheetDetailView.as_view(),
-        name='topomap-sheet-download',
+        name='sheet-detail',
     ),
     path(
         'v<str:version>/series-<int:series>/<str:sheet>/<str:paper_size>/',
         views.TopomapSheetDownloadView.as_view(),
-        name='topomap-sheet-download',
+        name='sheet-download',
     ),
 ]

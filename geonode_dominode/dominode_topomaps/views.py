@@ -1,4 +1,5 @@
 import logging
+import typing
 
 from django.conf import settings
 from django.contrib.auth import get_user_model
@@ -13,12 +14,53 @@ from django.views import (
     View
 )
 from django.shortcuts import get_object_or_404
+from django.template.response import TemplateResponse
 from geonode.base.auth import get_or_create_token
+from geonode.layers.views import layer_detail as geonode_layer_detail
 
 from .models import PublishedTopoMapIndexSheetLayer
 from . import utils
 
 logger = logging.getLogger(__name__)
+
+
+def layer_detail(
+        request,
+        layername,
+        template='layers/layer_detail.html'
+):
+    """Override geonode default layer detail view
+
+    This view overrides geonode's default layer detail view in order to add
+    additional topomap-related data to the render context. This is done in
+    order to show a list of existing topomap sheets
+
+    Implementation is a bit unusual:
+
+    - first we call the original geonode view
+    - we grab the response and extract the original context from it
+    - then we figure out if we need to add topomap-related information to the
+      context and proceed to do so if necessary
+    - finally we render a response similar to what the original geonode view
+      does, but we pass it our custom template
+
+    """
+
+    default_response: TemplateResponse = geonode_layer_detail(
+        request, layername, template=template)
+    context = default_response.context_data
+    layer = context.get('resource')
+    try:
+        topomap = PublishedTopoMapIndexSheetLayer.objects.get(pk=layer.id)
+    except PublishedTopoMapIndexSheetLayer.DoesNotExist:
+        context['topomap'] = None
+    else:
+        context['topomap'] = topomap
+        sheets_info = _get_topomap_sheets(topomap)
+        context['sheets'] = sheets_info
+    logger.debug('inside custom layer_detail view')
+    logger.debug(f'context: {context}')
+    return TemplateResponse(request, template, context=context)
 
 
 class TopoMapLayerMixin:
@@ -45,46 +87,17 @@ class TopomapListView(generic.ListView):
     paginate_by = 20
 
 
-class TopomapDetailView(generic.DetailView):
+# this is currently unused, left here for future reference, in case we decide
+# to provide a detail view for topomaps
+class TopomapDetailView(TopoMapLayerMixin, generic.DetailView):
     model = PublishedTopoMapIndexSheetLayer
     template_name = 'dominode_topomaps/topomap-detail.html'
     context_object_name = 'topomap'
 
-    def get_object(self, queryset=None):
-        queryset = queryset if queryset is not None else self.get_queryset()
-        version = self.kwargs.get('version')
-        series = self.kwargs.get('series')
-        if version is None or series is None:
-            raise AttributeError(
-                f'Generic detail view {self.__class__.__name__} must be '
-                f'called with a suitable version and series parameters in the '
-                f'URLconf'
-            )
-        queryset = queryset.filter(
-            name__contains=version).filter(name__contains=series)
-        return get_object_or_404(queryset)
-
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        self.object: PublishedTopoMapIndexSheetLayer
-        geoserver_admin_user = get_user_model().objects.get(
-            username=settings.OGC_SERVER_DEFAULT_USER)
-        access_token = get_or_create_token(geoserver_admin_user)
-        published_sheets = self.object.get_published_sheets(
-            use_public_wfs_url=False, geoserver_access_token=access_token)
-        sheets_info = []
-        for sheet_index in published_sheets:
-            sheet_paths = utils.find_sheet(
-                self.object.series, self.object.version, sheet_index)
-            if sheet_paths is not None:
-                sheets_info.append({
-                    'index': sheet_index,
-                    'paper_sizes': sheet_paths.keys()
-                })
-        sheets_info = sorted(sheets_info, key=lambda x: x['index'])
+        sheets_info = _get_topomap_sheets(self.object)
         context['sheets'] = sheets_info
-        context['allow_download'] = self.request.user.has_perm(
-            'download_resourcebase', self.object.resourcebase_ptr)
         return context
 
 
@@ -103,9 +116,6 @@ class SheetDetailView(TopoMapLayerMixin, generic.DetailView):
         self.object = self.get_object()
         can_download = self.request.user.has_perm(
             'download_resourcebase', self.object.resourcebase_ptr)
-
-        if not can_download:
-            raise Http404()
 
         sheet_paths = utils.find_sheet(
             self.object.series, self.object.version, sheet) or {}
@@ -151,3 +161,24 @@ class TopomapSheetDownloadView(LoginRequiredMixin, View):
                 )
             else:
                 raise Http404()
+
+
+def _get_topomap_sheets(
+        topomap: PublishedTopoMapIndexSheetLayer
+) -> typing.List:
+    geoserver_admin_user = get_user_model().objects.get(
+        username=settings.OGC_SERVER_DEFAULT_USER)
+    access_token = get_or_create_token(geoserver_admin_user)
+    published_sheets = topomap.get_published_sheets(
+        use_public_wfs_url=False, geoserver_access_token=access_token)
+    sheets_info = []
+    for sheet_index in published_sheets:
+        sheet_paths = utils.find_sheet(
+            topomap.series, topomap.version, sheet_index)
+        if sheet_paths is not None:
+            sheets_info.append({
+                'index': sheet_index,
+                'paper_sizes': sheet_paths.keys()
+            })
+    sheets_info = sorted(sheets_info, key=lambda x: x['index'])
+    return sheets_info

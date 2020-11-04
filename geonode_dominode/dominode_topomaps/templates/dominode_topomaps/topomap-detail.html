@@ -3,46 +3,14 @@
 
 {% block body_outer %}
     <div class="page-header">
-        <a href="{% url 'topomap-list' %}" class="btn btn-primary pull-right">{% trans "Back to topomaps list" %}</a>
+        <a href="{% url 'layer_detail' topomap.alternate %}" class="btn btn-primary pull-right">{% trans "Back to layer details" %}</a>
         <h2 class="page-title">{{ topomap.name }}</h2>
     </div>
-    {%  if not allow_download %}
-        {% if user.is_anonymous %}
-            <div class="alert alert-warning">
-                <p>{% trans "Topomap sheets can only be downloaded by logged in users that have been granted the relevant download permissions" %}</p>
-                <p>{%  trans "Register a user in the platform and then request access" %}</p>
-            </div>
-        {% else %}
-            <div class="alert alert-warning">
-                <p>{% trans "You are not currently allowed to download sheets for this topomap layer. Request access to the data" %}</p>
-            </div>
-        {% endif %}
-    {%  endif %}
     {% if sheets %}
         <p>{% trans "Published sheets:" %}</p>
         <div class="list-group">
             {% for sheet in sheets %}
-                {% if sheet.paper_sizes %}
-                <li class="list-group-item">
-                    {{ sheet.index }}
-                    {% if sheet.paper_sizes %}
-                    <span class="pull-right">
-                        {% for size in sheet.paper_sizes %}
-                            {% if allow_download %}
-                                <a
-                                        href="{% url 'topomap-sheet-download' topomap.version topomap.series sheet.index size %}"
-                                        class="label label-primary"
-                                        type="application/pdf"
-                                        download
-                                >{{ size|upper }}</a>
-                            {% else %}
-                                <label class="label label-warning" title="You don't have sufficient permission to download this sheet">{{ size|upper }}</label>
-                            {% endif %}
-                        {% endfor %}
-                    </span>
-                    {% endif %}
-                </li>
-                {% endif %}
+                <a class="list-group-item" href="{% url 'sheet-detail' topomap.version topomap.series sheet.index %}">{{ sheet.index }}</a>
             {% endfor %}
         </div>
     {% else %}

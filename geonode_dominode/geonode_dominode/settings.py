@@ -73,9 +73,19 @@ WSGI_APPLICATION = "{}.wsgi.application".format(PROJECT_NAME)
 # http://www.i18nguy.com/unicode/language-identifiers.html
 LANGUAGE_CODE = os.getenv('LANGUAGE_CODE', "en")
 
-INSTALLED_APPS += (
+# This sequence of INSTALLED_APPS seems unusually hacky, but there is good
+# reason for it:
+# - we need our custom dominode apps to be rendered before the stock geonode
+#   apps in order to be able to override some geonode templates
+# - on the other hand we also need to have the standard GeoNode groups app
+#   loaded before we include our geonode_dominode app because we are replacing
+#   the standard admin for geonode groups with our own, which uses
+#   django-guardian.
+#
+INSTALLED_APPS = (
     'dominode_validation.apps.DominodeValidationConfig',
     'dominode_topomaps.apps.DominodeTopomapsConfig',
+) + INSTALLED_APPS + (
     'geonode_dominode.apps.AppConfig',
     'rest_framework',
     # 'django_filters',
