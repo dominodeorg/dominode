@@ -22,6 +22,7 @@ x-common-django:
     - TIME_ZONE=${TIME_ZONE}
     - ALLOWED_HOSTS=['nginx','127.0.0.1','localhost','$HTTPS_HOST','$HTTP_HOST']
     - SECRET_KEY=${SECRET_KEY}
+    - PLAUSIBLE_DOMAIN=${PLAUSIBLE_DOMAIN}
     # data
     ## -- comment to disable postgis ingestion of uploaded shapefiles
     - DEFAULT_BACKEND_UPLOADER=geonode.importer
@@ -118,7 +119,7 @@ services:
   # Geoserver backend
   geoserver:
     image: geonode/spcgeonode:geoserver-3.0
-    build: ./geoserver/
+    #build: ./geoserver/
     healthcheck:
       test: "curl --fail --silent --write-out 'HTTP CODE : %{http_code}\n' --output /dev/null http://127.0.0.1:8080/geoserver/rest/workspaces/geonode.html"
       interval: 60s
@@ -194,7 +195,7 @@ services:
   postgres:
     # use geonode official postgis 10 image
     image: geonode/postgis:10
-    build: ./postgis/
+    #build: ./postgis/
     environment:
       # database info, ${variables} are read from .env
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
@@ -242,7 +243,7 @@ services:
     restart: on-failure
 
   plausible:
-    image: plausible/analytics:latest
+    image: plausible/analytics:v1.1
     command: sh -c "sleep 10 && /entrypoint.sh db createdb && /entrypoint.sh db migrate && /entrypoint.sh db init-admin && /entrypoint.sh run"
     depends_on:
       - plausible_db
