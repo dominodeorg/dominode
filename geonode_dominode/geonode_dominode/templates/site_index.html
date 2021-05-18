@@ -32,10 +32,10 @@ This is where you can override the hero area block. You can simply modify the co
               </div>
 
               <div class="col-md-6">
-                <p><a href="#"><i class="far fa-compass fa-4x"></i></a></p>
-                <h2><a href="#">LiDAR</a></h2>
+                <p><a href="{% url "lidar-map" %}"><i class="far fa-compass fa-4x"></i></a></p>
+                <h2><a href="{% url "lidar-map" %}">LiDAR</a></h2>
                 <p>Topographic and bathymetric LiDAR data from Dominica.</p>
-                <p class="text-center"><a class="btn btn-default" href="https://google.com" role="button">Explore LiDAR &raquo;</a></p>
+                <p class="text-center"><a class="btn btn-default" href="{% url "lidar-map" %}" role="button">Explore LiDAR &raquo;</a></p>
               </div>
  			</div>
             <div class="row home-facets">

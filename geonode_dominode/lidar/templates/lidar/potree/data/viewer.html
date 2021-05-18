@@ -1,0 +1,65 @@
+{% if lidar_permission %}
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<meta name="description" content="">
+	<meta name="author" content="">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+	<title>Potree Viewer</title>
+
+
+	<link rel="stylesheet" type="text/css" href="{% static '/build/potree/potree.css' %}">
+	<link rel="stylesheet" type="text/css" href="{% static '/libs/jquery-ui/jquery-ui.min.css' %}">
+	<link rel="stylesheet" type="text/css" href="{% static '/libs/perfect-scrollbar/css/perfect-scrollbar.css' %}">
+	<link rel="stylesheet" type="text/css" href="{% static '/libs/openlayers3/ol.css' %}">
+	<link rel="stylesheet" type="text/css" href="{% static '/libs/spectrum/spectrum.css' %}">
+	<link rel="stylesheet" type="text/css" href="{% static '/libs/jstree/themes/mixed/style.css' %}">
+    <link rel="stylesheet" href="{% static '/css/entwine.css' %}" type="text/css">
+</head>
+<body>
+	
+	<script src="{% static '/libs/jquery/jquery-3.1.1.min.js' %}"></script>
+	<script src="{% static '/libs/spectrum/spectrum.js' %}"></script>
+	<script src="{% static '/libs/perfect-scrollbar/js/perfect-scrollbar.jquery.js' %}"></script>
+	<script src="{% static '/libs/jquery-ui/jquery-ui.min.js' %}"></script>
+	<script src="{% static '/libs/three.js/build/three.min.js' %}"></script>
+	<script src="{% static '/libs/other/BinaryHeap.js' %}"></script>
+	<script src="{% static '/libs/tween/tween.min.js' %}"></script>
+	<script src="{% static '/libs/d3/d3.js' %}"></script>
+	<script src="{% static '/libs/proj4/proj4.js' %}"></script>
+	<script src="{% static '/libs/openlayers3/ol.js' %}"></script>
+	<script src="{% static '/libs/i18next/i18next.js' %}"></script>
+	<script src="{% static '/libs/jstree/jstree.js' %}"></script>
+	<script src="{% static '/build/potree/potree.js' %}"></script>
+	<script src="{% static '/libs/plasio/js/laslaz.js' %}"></script>
+    <script src="{% static '/libs/clipboard.min.js' %}" type="text/javascript"></script>
+    <script type="text/javascript">
+        window.config = {
+            resource: 'http://172.24.100.33:9999',
+            position: [692718.3877910083,1681378.0898933008,23659.380450557852],
+            target: [679091.2629785265,1696068.2769850069,600.7062670152372]
+        };
+    </script>
+    <div id="potree_container">
+		<div id="potree_render_area"></div>
+		<div id="potree_sidebar_container"></div>
+	</div>
+        <a href="/" id="entwine_logo_container">
+            <img id="entwine_logo" src="{% static 'favicon.ico' %} "/>
+        </a>
+        <img id="entwine_copy" src="{% static '/resources/icons/entwine-share.svg' %}"
+            title='Share a link with current view settings'
+            onclick="$('#entwine_copied').show()"
+            onmouseleave="$('#entwine_copied').hide()"
+        />
+        <div id="entwine_copied">Copied shareable link</div>
+    <script type="text/javascript" src="{% static '/js/script.js' %}"></script>
+  </body>
+</html>
+{% else %}
+<h2> Unauthorized, please log in!</h2>
+<a href="{% url "home" %}">RETURN TO HOME</a>
+
+{% endif %}

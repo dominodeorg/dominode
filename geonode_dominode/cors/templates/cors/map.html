@@ -32,16 +32,6 @@
                         <input type="date" class="form-control" name="to" required>
                     </div>
                     <button id="download-observation-button" type="submit" class="btn btn-primary">Get Links</button>
-
-                      {% if latest_question_list %}
-                        <ul>
-                        {% for question in latest_question_list %}
-                            <li>{{ question }}</a></li>
-                        {% endfor %}
-                        </ul>
-                    {% else %}
-                        <p>No polls are available.</p>
-                    {% endif %}
                 </form>
 
 

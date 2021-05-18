@@ -40,6 +40,7 @@ urlpatterns = [
     url(r'^layers/(?P<layername>[^/]*)/replace$',
         RedirectView.as_view(url='/')),
     url(r'^cors/', include('cors.urls')),
+    url(r'^lidar/', include('lidar.urls')),
     url(r'^/?$',
         homepage,
         name='home'),

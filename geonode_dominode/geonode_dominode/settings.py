@@ -95,7 +95,7 @@ INSTALLED_APPS = (
     'rest_framework',
     # 'django_filters',
     'django_json_widget',
-) + ('cors',)
+) + ('cors',) + ('lidar',)
 
 REST_FRAMEWORK = {
     'DEFAULT_PAGINATION_CLASS': (
