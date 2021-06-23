@@ -30,7 +30,7 @@ RUN echo "Updating apt-get" && \
 
 # Install python dependencies
 RUN echo "Geonode python dependencies"
-RUN pip install celery==4.4.0
+RUN pip install celery==5.1.1
 
 # Install geonode dependencies
 ADD requirements.txt /requirements.txt
