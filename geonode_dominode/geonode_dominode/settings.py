@@ -56,7 +56,7 @@ PLAUSIBLE_DOMAIN = os.getenv('PLAUSIBLE_DOMAIN',"http://localhost")
 PLAUSIBLE_URL = "{}/js/plausible.js".format(PLAUSIBLE_DOMAIN)
 
 
-NFS_LOCATION = os.getenv('NFS_LOCATION',"/share/spatialstore")
+NFS_LOCATION = os.getenv('NFS_LOCATION',"/share/spatialstore/lsd-topomaps")
 
 
 try:
