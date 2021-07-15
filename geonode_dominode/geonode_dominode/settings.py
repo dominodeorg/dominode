@@ -55,6 +55,10 @@ DOMAIN = os.getenv('HTTP_HOST', "localhost")
 PLAUSIBLE_DOMAIN = os.getenv('PLAUSIBLE_DOMAIN',"http://localhost")
 PLAUSIBLE_URL = "{}/js/plausible.js".format(PLAUSIBLE_DOMAIN)
 
+
+NFS_LOCATION = os.getenv('NFS_LOCATION',"/share/spatialstore")
+
+
 try:
     from geonode_dominode.local_settings import *
 #    from geonode.local_settings import *
@@ -234,7 +238,7 @@ CELERY_TASK_DEFAULT_ROUTING_KEY = 'default'
 DOMINODE_PUBLISHED_TOPOMAPS = {
     'index_pattern': 'lsd_published-topomap-series',
     'sheet_path_pattern': (
-        '/topomaps/v{version}/series-{series}/dominica_topomap-{series}-'
-        '(?P<paper_size>\w+)-{sheet}_v{version}.pdf'
+        '%s/topomaps/v{version}/series-{series}/dominica_topomap-{series}-'
+        '(?P<paper_size>\w+)-{sheet}_v{version}.pdf' % (NFS_LOCATION)
     ),
 }
