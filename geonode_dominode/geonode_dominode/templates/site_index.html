@@ -43,7 +43,7 @@ This is where you can override the hero area block. You can simply modify the co
 		      <p><a href="{% url "layer_browse" %}?limit=50&offset=0&keywords__slug__in=topomaps"><i class="fas fa-map-marked-alt fa-4x"></i></a></p>
                 <h2><a href="{% url "layer_browse" %}?limit=50&offset=0&keywords__slug__in=topomaps">TopoMaps</a></h2>
                 <p>Dominica's Topomaps are maps characterized by large-scale detail and quantitative representation of relief.</p>
-                <p class="text-center"><a class="btn btn-default" href="{% url "topomap-list" %}" role="button">Explore TopoMaps &raquo;</a></p>
+                <p class="text-center"><a class="btn btn-default" href="{% url "layer_browse" %}?limit=50&offset=0&keywords__slug__in=topomaps" role="button">Explore TopoMaps &raquo;</a></p>
               </div>
 
   			<div class="col-md-6">
