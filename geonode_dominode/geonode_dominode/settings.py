@@ -57,7 +57,7 @@ PLAUSIBLE_URL = "{}/js/plausible.js".format(PLAUSIBLE_DOMAIN)
 
 
 NFS_LOCATION = os.getenv('NFS_LOCATION',"/share/spatialstore/lsd-topomaps")
-LOCATION_LAS_FILES = os.getenv('NFS_LOCATION',"/share/spatialstore/privileged/lidar-bucket/Merged_PointCloud")
+LOCATION_LAS_FILES = os.getenv('LOCATION_LAS_FILES',"/share/spatialstore/privileged/lidar-bucket/Merged_PointCloud")
 LIDAR_VERSION = os.getenv('LIDAR_VERSION',"1.0.0")
 LIDAR_SERIES = os.getenv('LIDAR_SERIES',"1086")
 
