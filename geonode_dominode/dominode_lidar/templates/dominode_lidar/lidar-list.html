@@ -1,0 +1,45 @@
+{% extends "geonode_base.html" %}
+{% load i18n %}
+
+{% block body_outer %}
+    <div class="page-header">
+        <h2 class="page-title">{% trans "DomiNode published LiDAR files" %}</h2>
+    </div>
+    <div>
+    {% blocktrans %}
+    {% endblocktrans %}
+    </div>
+    {% if lidars %}
+        <p>{% trans "Available LiDAR files:" %}</p>
+        <div class="list-group">
+            {% for lid in lidars %}
+                <a href="{% url 'lidar-detail' lid.version lid.series %}" class="list-group-item">
+                    {{ lid.title }}
+                </a>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div>
+            {% blocktrans %}
+                There are no LiDAR published yet
+            {% endblocktrans %}
+        </div>
+    {% endif %}
+    {% if is_paginated %}
+        <div class="pagination">
+            <span>
+                {% if page_obj.has_previous %}
+                    <a href="?page=1">&laquo; first</a>
+                    <a href="?page={{ page_obj.previous_page_number }}">previous</a>
+                {% endif %}
+                <span class="current">
+                    Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}.
+                </span>
+                {% if page_obj.has_next %}
+                    <a href="?page={{ page_obj.next_page_number }}">next</a>
+                    <a href="?page={{ page_obj.paginator.num_pages }}">last &raquo;</a>
+                {% endif %}
+            </span>
+        </div>
+    {% endif %}
+{% endblock %}

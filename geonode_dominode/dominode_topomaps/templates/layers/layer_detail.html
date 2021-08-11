@@ -267,6 +267,26 @@
           </div>
       {% endif %}
 
+
+      {% if lidar %}
+          <div>
+              {% if las_files %}
+                  <h4>{% trans "Published LiDAR files" %}</h4>
+                  <div class="list-group">
+                      {% for las in las_files %}
+                          <a class="list-group-item" href="{% url 'lidar-sheet-detail' lidar.version lidar.series las.index %}">{{ las.index }}</a>
+                      {% endfor %}
+                  </div>
+              {% else %}
+                  <div>
+                      {% blocktrans %}
+                          There are no published LiDAR files yet
+                      {% endblocktrans %}
+                  </div>
+              {% endif %}
+          </div>
+      {% endif %}
+
   </div>
   <div class="col-md-4">
 

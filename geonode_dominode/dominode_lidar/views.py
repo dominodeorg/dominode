@@ -17,11 +17,10 @@ from django.shortcuts import get_object_or_404
 from django.template.response import TemplateResponse
 from geonode.base.auth import get_or_create_token
 from geonode.layers.views import layer_detail as geonode_layer_detail
-from dominode_lidar.models import PublishedLidarIndexSheetLayer
-from dominode_lidar.views import _get_lidar_sheets
-from .models import PublishedTopoMapIndexSheetLayer
-from . import utils
 
+from .models import PublishedLidarIndexSheetLayer
+from . import utils
+import os 
 logger = logging.getLogger(__name__)
 
 
@@ -33,14 +32,14 @@ def layer_detail(
     """Override geonode default layer detail view
 
     This view overrides geonode's default layer detail view in order to add
-    additional topomap-related data to the render context. This is done in
-    order to show a list of existing topomap sheets
+    additional lidar-related data to the render context. This is done in
+    order to show a list of existing lidar sheets
 
     Implementation is a bit unusual:
 
     - first we call the original geonode view
     - we grab the response and extract the original context from it
-    - then we figure out if we need to add topomap-related information to the
+    - then we figure out if we need to add lidar-related information to the
       context and proceed to do so if necessary
     - finally we render a response similar to what the original geonode view
       does, but we pass it our custom template
@@ -52,35 +51,20 @@ def layer_detail(
     context = default_response.context_data
     layer = context.get('resource')
     try:
-        topomap = PublishedTopoMapIndexSheetLayer.objects.get(pk=layer.id)
-        
 
-    except PublishedTopoMapIndexSheetLayer.DoesNotExist:
-        context['topomap'] = None
-        
-    else:
-        context['topomap'] = topomap
-        sheets_info = _get_topomap_sheets(topomap)
-        context['sheets'] = sheets_info
-
-    try:
         lidar = PublishedLidarIndexSheetLayer.objects.get(pk=layer.id)
-
     except PublishedLidarIndexSheetLayer.DoesNotExist:
         context['lidar'] = None
-        
     else:
         context['lidar'] = lidar
-        files_info = _get_lidar_sheets(lidar)
-        context['las_files'] = files_info
-    
-
+        sheets_info = _get_topomap_sheets(lidar)
+        context['sheets'] = sheets_info
     logger.debug('inside custom layer_detail view')
     logger.debug(f'context: {context}')
     return TemplateResponse(request, template, context=context)
 
 
-class TopoMapLayerMixin:
+class LidarMapLayerMixin:
 
     def get_object(self, queryset=None):
         queryset = queryset if queryset is not None else self.get_queryset()
@@ -97,19 +81,19 @@ class TopoMapLayerMixin:
         return get_object_or_404(queryset)
 
 
-class TopomapListView(generic.ListView):
-    queryset = PublishedTopoMapIndexSheetLayer.objects.all()
-    template_name = 'dominode_topomaps/topomap-list.html'
-    context_object_name = 'topomaps'
+class LidarmapListView(generic.ListView):
+    queryset = PublishedLidarIndexSheetLayer.objects.all()
+    template_name = 'dominode_lidar/lidar-list.html'
+    context_object_name = 'lidars'
     paginate_by = 20
 
 
 # this is currently unused, left here for future reference, in case we decide
-# to provide a detail view for topomaps
-class TopomapDetailView(TopoMapLayerMixin, generic.DetailView):
-    model = PublishedTopoMapIndexSheetLayer
-    template_name = 'dominode_topomaps/topomap-detail.html'
-    context_object_name = 'topomap'
+# to provide a detail view for lidar files
+class LidarDetailView(LidarMapLayerMixin, generic.DetailView):
+    model = PublishedLidarIndexSheetLayer
+    template_name = 'dominode_lidar/lidar-detail.html'
+    context_object_name = 'lidar'
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -118,15 +102,17 @@ class TopomapDetailView(TopoMapLayerMixin, generic.DetailView):
         return context
 
 
-class SheetDetailView(TopoMapLayerMixin, generic.DetailView):
-    model = PublishedTopoMapIndexSheetLayer
-    template_name = 'dominode_topomaps/topomap-sheet-detail.html'
+class SheetDetailView(LidarMapLayerMixin, generic.DetailView):
+    model = PublishedLidarIndexSheetLayer
+    template_name = 'dominode_lidar/lidar-sheet-detail.html'
     context_object_name = 'layer'
 
     def get(
             self,
             request: HttpRequest,
-            sheet: str,
+            version: str,
+            series: int,
+            las: str,
             *args,
             **kwargs
     ):
@@ -134,19 +120,20 @@ class SheetDetailView(TopoMapLayerMixin, generic.DetailView):
         can_download = self.request.user.has_perm(
             'download_resourcebase', self.object.resourcebase_ptr)
 
-        sheet_paths = utils.find_sheet(
-            self.object.series, self.object.version, sheet) or {}
+        #sheet_paths = utils.find_sheet(
+        #    self.object.series, self.object.version, sheet) or {}
 
         context = self.get_context_data(
             object=self.object,
-            sheet=sheet,
-            paper_sizes=sheet_paths.keys(),
-            can_download=can_download
+            las=las,
+            #paper_sizes=sheet_paths.keys(),
+            can_download=can_download,
+            url_download="download"
         )
         return self.render_to_response(context)
 
 
-class TopomapSheetDownloadView(LoginRequiredMixin, View):
+class LidarSheetDownloadView(LoginRequiredMixin, View):
     http_method_names = ['get']
 
     def get(
@@ -154,48 +141,52 @@ class TopomapSheetDownloadView(LoginRequiredMixin, View):
             request: HttpRequest,
             version: str,
             series: int,
-            sheet: str,
-            paper_size: str,
+            las: str,
             *args,
             **kwargs
     ):
-        queryset = PublishedTopoMapIndexSheetLayer.objects.filter(
+        queryset = PublishedLidarIndexSheetLayer.objects.filter(
             name__contains=version).filter(name__contains=series)
-        topomap_layer = get_object_or_404(queryset)
-        logger.debug(f'topomap_layer: {topomap_layer}')
+        lidar_layer = get_object_or_404(queryset)
+        logger.debug(f'lidar_layer: {lidar_layer}')
         can_download = self.request.user.has_perm(
-            'download_resourcebase', topomap_layer.resourcebase_ptr)
+            'download_resourcebase', lidar_layer.resourcebase_ptr)
         if not can_download:
             raise Http404()
         else:
-            available_sheet_paths = utils.find_sheet(series, version, sheet) or {}
-            sheet_path = available_sheet_paths.get(paper_size)
-            if sheet_path is not None:
+            location_las = settings.DOMINODE_PUBLISHED_LIDAR["location_files"]
+            las_path = os.path.join(location_las,las)
+            available_path = os.path.exists(las_path )
+            if available_path:
                 return FileResponse(
-                    open(sheet_path, 'rb'),
+                    open(las_path, 'rb'),
                     as_attachment=True,
-                    filename=sheet_path.name
+                    filename=las
                 )
             else:
                 raise Http404()
 
 
-def _get_topomap_sheets(
-        topomap: PublishedTopoMapIndexSheetLayer
-) -> typing.List:
+def _get_lidar_sheets(
+        lidar: PublishedLidarIndexSheetLayer
+        ) -> typing.List:
     geoserver_admin_user = get_user_model().objects.get(
         username=settings.OGC_SERVER_DEFAULT_USER)
     access_token = get_or_create_token(geoserver_admin_user)
-    published_sheets = topomap.get_published_sheets(
+    las_files = lidar.get_published_sheets(
         use_public_wfs_url=False, geoserver_access_token=access_token)
-    sheets_info = []
-    for sheet_index in published_sheets:
-        sheet_paths = utils.find_sheet(
-            topomap.series, topomap.version, sheet_index)
-        if sheet_paths is not None:
-            sheets_info.append({
-                'index': sheet_index,
-                'paper_sizes': sheet_paths.keys()
+    las_info = []
+    location_lidar = settings.DOMINODE_PUBLISHED_LIDAR['location_files']
+
+    for las in las_files:
+
+        path_file = os.path.join(location_lidar,las)
+        las_path = os.path.exists(path_file)
+
+        if las_path:
+            las_info.append({
+                'index': las,
+                'location': path_file
             })
-    sheets_info = sorted(sheets_info, key=lambda x: x['index'])
-    return sheets_info
+    las_info = sorted(las_info, key=lambda x: x['index'])
+    return las_info

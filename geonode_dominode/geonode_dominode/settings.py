@@ -57,7 +57,9 @@ PLAUSIBLE_URL = "{}/js/plausible.js".format(PLAUSIBLE_DOMAIN)
 
 
 NFS_LOCATION = os.getenv('NFS_LOCATION',"/share/spatialstore/lsd-topomaps")
-
+LOCATION_LAS_FILES = os.getenv('NFS_LOCATION',"/share/spatialstore/privileged/lidar-bucket/Merged_PointCloud")
+LIDAR_VERSION = os.getenv('LIDAR_VERSION',"1.0.0")
+LIDAR_SERIES = os.getenv('LIDAR_SERIES',"1086")
 
 try:
     from geonode_dominode.local_settings import *
@@ -98,6 +100,7 @@ LANGUAGE_CODE = os.getenv('LANGUAGE_CODE', "en")
 INSTALLED_APPS = (
     'dominode_validation.apps.DominodeValidationConfig',
     'dominode_topomaps.apps.DominodeTopomapsConfig',
+    'dominode_lidar.apps.DominodeLidarConfig',
 ) + INSTALLED_APPS + (
     'geonode_dominode.apps.AppConfig',
     'rest_framework',
@@ -242,3 +245,11 @@ DOMINODE_PUBLISHED_TOPOMAPS = {
         '(?P<paper_size>\w+)-{sheet}_v{version}.pdf' % (NFS_LOCATION)
     ),
 }
+
+DOMINODE_PUBLISHED_LIDAR = {
+  'index_pattern': 'lidar_index',
+  'location_files':LOCATION_LAS_FILES,
+  'version': LIDAR_VERSION,
+  'series': int(LIDAR_SERIES),
+}
+
