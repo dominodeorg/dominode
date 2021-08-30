@@ -34,7 +34,15 @@ This is where you can override the hero area block. You can simply modify the co
               <div class="col-md-6">
                 <p><a href="{% url "lidar-map" %}"><i class="far fa-compass fa-4x"></i></a></p>
                 <h2><a href="{% url "lidar-map" %}">LiDAR</a></h2>
-                <p>Topographic and bathymetric LiDAR data from Dominica.</p>
+                <p>Topographic and bathymetric LiDAR data from Dominica. You can also request by email to <a href="mailto:ariel@piensa.co">ariel@piensa.co</a> the following data:</p>
+                  <p>
+                  <li align="left">LiDAR grid.</li>
+                  <li align="left">LiDAR LAS/LAZ: Topographic and Bathymetric.</li> 
+                  <li align="left">DSM / DEM.
+                  <li align="left">Imagery data: COG, GeoTiff, Orthophotos.
+                  <li align="left">Shapefiles. 
+                  </p>  
+
                 <p class="text-center"><a class="btn btn-default" href="{% url "lidar-map" %}" role="button">Explore LiDAR &raquo;</a></p>
               </div>
  			</div>
@@ -47,10 +55,10 @@ This is where you can override the hero area block. You can simply modify the co
               </div>
 
   			<div class="col-md-6">
-                <p><a href="#"><i class="fas fa-satellite fa-4x"></i></a></p>
-                <h2><a href="#"> COGs</a></h2>
+                <p><a href="{% url "layer_browse" %}?limit=50&offset=0&keywords__slug__in=geotiff"><i class="fas fa-satellite fa-4x"></i></a></p>
+                <h2><a href="{% url "layer_browse" %}?limit=50&offset=0&keywords__slug__in=geotiff"> COGs</a></h2>
                 <p>Cloud optimized Geotiffs from satellite imaging of Dominica.</p>
-                <p class="text-center"><a class="btn btn-default" href="#" role="button">Explore COGs &raquo;</a></p>
+                <p class="text-center"><a class="btn btn-default" href="{% url "layer_browse" %}?limit=50&offset=0&keywords__slug__in=geotiff" role="button">Explore COGs &raquo;</a></p>
               </div>
 
             </div>
